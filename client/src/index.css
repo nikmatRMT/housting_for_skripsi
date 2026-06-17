@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Palet Warna Aksesibilitas Tinggi & Resmi */
+  --bg-main: #F8FAFC; /* Putih Tulang / Abu Lembut */
+  --surface: #FFFFFF; /* Putih Bersih untuk Kartu */
+  
+  --primary: #1E3A8A; /* Biru Safir */
+  --primary-hover: #172554;
+  --secondary: #10B981; /* Hijau Sage / Emerald */
+  --accent: #3B82F6; /* Biru Muda */
+
+  --text-main: #0F172A; /* Kontras maksimal untuk bacaan */
+  --text-muted: #64748B; /* Teks tambahan / deskripsi */
+  
+  --border-light: #E2E8F0;
+  --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.025);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: #E2E8F0; /* Latar luar layar HP */
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+/* Container Smartphone (Mobile First) */
+#root {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-main);
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  overflow-x: hidden;
+}
+
+/* Card Style */
+.clean-card {
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Aksesibilitas Tinggi: Tombol Besar dan Kontras */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-outline {
+  background-color: var(--surface);
+  color: var(--text-main);
+  border: 2px solid var(--border-light);
+}
+
+.btn-outline:hover {
+  background-color: #F1F5F9;
+  border-color: #CBD5E1;
+}
+
+/* Typography Keterbacaan Tinggi */
+h1 {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Animasi Masuk Halus (Aman untuk mata) */
+.fade-up {
+  opacity: 0;
+  transform: translateY(15px);
+  animation: fadeUpAnim 0.5s ease-out forwards;
+}
+
+@keyframes fadeUpAnim {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+
+/* Sembunyikan panel instruksi teks Leaflet Routing Machine */
+.leaflet-routing-container {
+  display: none !important;
+}
