@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 const User = require('./models/User');
 const Quest = require('./models/Quest');
@@ -8,12 +9,14 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/jasa_l
 async function seedDatabase() {
     try {
         await mongoose.connect(MONGODB_URI);
-        console.log('Terhubung ke MongoDB lokal...');
+        console.log('Terhubung ke MongoDB...');
 
         // Hapus data lama agar tidak duplikat saat dijalankan berkali-kali
         await User.deleteMany({});
         await Quest.deleteMany({});
         console.log('Membersihkan koleksi lama...');
+
+        const hashedPassword = await bcrypt.hash('password123', 10);
 
         // 1. Membuat data Klien (Peminta Jasa)
         const klien = await User.create({
@@ -22,6 +25,7 @@ async function seedDatabase() {
             nama_lengkap: 'Budi Santoso (Klien)',
             email: 'budi.santoso@email.com',
             no_whatsapp: '6281234567890',
+            password: hashedPassword,
             batas_talangan: 50000
         });
 
@@ -31,7 +35,8 @@ async function seedDatabase() {
             google_id: 'g_0987654321',
             nama_lengkap: 'Siti Aminah (Pekerja)',
             email: 'siti.aminah@email.com',
-            no_whatsapp: '6289876543210'
+            no_whatsapp: '6289876543210',
+            password: hashedPassword
         });
         
         console.log('✅ Data User berhasil dibuat!');
