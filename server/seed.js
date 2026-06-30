@@ -38,8 +38,18 @@ async function seedDatabase() {
             no_whatsapp: '6289876543210',
             password: hashedPassword
         });
+
+        // 3. Membuat data Admin
+        const admin = await User.create({
+            _id: new mongoose.Types.ObjectId('60b5c1c8a1b2c3d4e5f60003'),
+            nama_lengkap: 'Admin Jasa Warga',
+            email: 'admin@email.com',
+            no_whatsapp: '6289999999999',
+            password: hashedPassword,
+            role: 'admin'
+        });
         
-        console.log('✅ Data User berhasil dibuat!');
+        console.log('✅ Data User (termasuk Admin) berhasil dibuat!');
 
         // Koordinat Guntung Paikat (Estimasi contoh: Banjarbaru)
         // Koordinat Klien
