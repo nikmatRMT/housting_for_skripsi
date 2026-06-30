@@ -358,7 +358,10 @@ exports.getHistory = async (req, res) => {
                 { pekerja_id: user_id }
             ],
             status: { $in: ['COMPLETED', 'CANCELED'] }
-        }).sort({ created_at: -1 });
+        })
+        .populate('pembuat_id', 'nama_lengkap no_whatsapp email')
+        .populate('pekerja_id', 'nama_lengkap no_whatsapp email')
+        .sort({ created_at: -1 });
 
         res.status(200).json({ success: true, data: history });
     } catch (error) {

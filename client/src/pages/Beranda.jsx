@@ -19,6 +19,7 @@ export default function Beranda() {
         questsMonth: 0,
         distanceTodayKm: 0
     });
+    const [locationError, setLocationError] = useState(false);
 
     useEffect(() => {
         if (!isGuest) {
@@ -48,9 +49,15 @@ export default function Beranda() {
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
-                (pos) => fetchQuests(pos.coords.latitude, pos.coords.longitude),
+                (pos) => {
+                    setLocationError(false);
+                    fetchQuests(pos.coords.latitude, pos.coords.longitude);
+                },
                 (err) => {
                     console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
+                    if (err.code === 1) { // 1 = PERMISSION_DENIED
+                        setLocationError(true);
+                    }
                     fetchQuests(-3.440, 114.836);
                 }
             );
@@ -127,6 +134,35 @@ export default function Beranda() {
             </header>
 
             <div style={{ padding: '16px 20px' }}>
+                
+                {/* Banner Peringatan GPS Ditolak */}
+                {locationError && (
+                    <div className="error-box" style={{ 
+                        marginBottom: '16px', 
+                        padding: '16px', 
+                        backgroundColor: 'rgba(248, 113, 113, 0.15)',
+                        border: '2px solid var(--accent-coral)',
+                        color: 'var(--text-main)',
+                        borderRadius: '8px',
+                        fontSize: '13px',
+                        lineHeight: '1.5'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-coral)' }}>
+                            <span>⚠️ Akses Lokasi (GPS) Ditolak</span>
+                        </div>
+                        <p style={{ marginBottom: '8px' }}>
+                            Aplikasi tidak dapat mendeteksi lokasi asli Anda. Saat ini tugas ditampilkan menggunakan lokasi default Kelurahan Guntung Paikat.
+                        </p>
+                        <p style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '4px' }}>
+                            Cara Mengaktifkan Kembali:
+                        </p>
+                        <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <li>Klik ikon <strong>kunci/gembok (🔒)</strong> atau setelan di sebelah kiri alamat URL web browser Anda.</li>
+                            <li>Ubah izin <strong>Lokasi (Location)</strong> menjadi <strong>Izinkan (Allow)</strong>.</li>
+                            <li>Segarkan (refresh) halaman ini untuk memuat ulang lokasi Anda.</li>
+                        </ol>
+                    </div>
+                )}
                 
                 {/* ── Tombol Buat Tugas ──────────────────── */}
                 {!isGuest && (

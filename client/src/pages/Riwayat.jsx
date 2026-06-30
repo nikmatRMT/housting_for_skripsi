@@ -72,31 +72,162 @@ const Riwayat = () => {
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         {historyList.map((quest) => {
-                            const isKlien = quest.pembuat_id === MY_USER_ID;
+                            const pembuatId = quest.pembuat_id?._id || quest.pembuat_id;
+                            const isKlien = pembuatId === MY_USER_ID;
                             const totalUang = quest.upah_jasa + (quest.nominal_talangan || 0);
                             
+                            // Mendapatkan info mitra (klien atau pekerja)
+                            const mitra = isKlien ? quest.pekerja_id : quest.pembuat_id;
+                            const statusSelesai = quest.status === 'COMPLETED';
+
+                            // Ikon kategori
+                            let kategoriIcon = '📄';
+                            let kategoriLabel = 'Lainnya';
+                            if (quest.kategori === 'jastip') {
+                                kategoriIcon = '🛒';
+                                kategoriLabel = 'Jasa Titip (Jastip)';
+                            } else if (quest.kategori === 'fisik') {
+                                kategoriIcon = '🛠️';
+                                kategoriLabel = 'Jasa Fisik';
+                            }
+
                             return (
-                                <div key={quest._id} className="clean-card" style={{ padding: '18px 21px' }}>
-                                    {/* Role & Date */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                        <span className={`badge ${isKlien ? 'badge-sunshine' : 'badge-green'}`}>
-                                            {isKlien ? 'SAYA KLIEN' : 'SAYA PEKERJA'}
-                                        </span>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                                            {new Date(quest.created_at).toLocaleDateString('id-ID')}
+                                <div key={quest._id} className="clean-card" style={{ 
+                                    padding: '20px', 
+                                    position: 'relative',
+                                    border: '2px solid var(--border-ink)',
+                                    boxShadow: statusSelesai ? '4px 4px 0px var(--accent-green)' : '4px 4px 0px var(--accent-coral)',
+                                    transition: 'transform 0.2s',
+                                    backgroundColor: 'var(--surface)'
+                                }}>
+                                    {/* Badge Status & Role */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <span className={`badge ${isKlien ? 'badge-sunshine' : 'badge-green'}`}>
+                                                {isKlien ? 'SAYA KLIEN' : 'SAYA PEKERJA'}
+                                            </span>
+                                        </div>
+                                        <span className={`badge ${statusSelesai ? 'badge-green' : 'badge-coral'}`} style={{
+                                            backgroundColor: statusSelesai ? 'rgba(74, 222, 128, 0.15)' : 'rgba(248, 113, 113, 0.15)',
+                                            color: statusSelesai ? 'var(--accent-green)' : 'var(--accent-coral)',
+                                            border: `1.5px solid ${statusSelesai ? 'var(--accent-green)' : 'var(--accent-coral)'}`,
+                                            fontWeight: '700'
+                                        }}>
+                                            {statusSelesai ? '✓ SELESAI' : '✗ BATAL'}
                                         </span>
                                     </div>
 
-                                    <h3 style={{ fontSize: '1rem', marginBottom: '4px', textTransform: 'uppercase' }}>{quest.kategori}</h3>
-                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '14px', lineHeight: '1.5' }}>{quest.deskripsi}</p>
-                                    
-                                    <hr className="divider-dashed" style={{ margin: '0 0 12px' }} />
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '13px', color: 'var(--text-main)' }}>Total Transaksi:</span>
-                                        <span style={{ fontSize: '1rem', fontWeight: '800', color: isKlien ? 'var(--accent-coral)' : 'var(--accent-green)' }}>
-                                            {isKlien ? '-' : '+'} Rp {totalUang.toLocaleString('id-ID')}
-                                        </span>
+                                    {/* Kategori & Deskripsi */}
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '14px' }}>
+                                        <div style={{ 
+                                            fontSize: '24px', 
+                                            padding: '8px', 
+                                            backgroundColor: 'var(--bg-main)', 
+                                            border: '2px solid var(--border-ink)', 
+                                            borderRadius: '8px',
+                                            lineHeight: '1'
+                                        }}>
+                                            {kategoriIcon}
+                                        </div>
+                                        <div>
+                                            <span style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                                                {kategoriLabel}
+                                            </span>
+                                            <p style={{ 
+                                                fontSize: '14px', 
+                                                fontWeight: '600', 
+                                                color: 'var(--text-main)', 
+                                                marginTop: '4px',
+                                                lineHeight: '1.4' 
+                                            }}>
+                                                {quest.deskripsi}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Info Mitra Kerja */}
+                                    {mitra && (
+                                        <div style={{ 
+                                            backgroundColor: 'var(--bg-main)', 
+                                            border: '2px solid var(--border-ink)', 
+                                            borderRadius: '8px',
+                                            padding: '10px 14px', 
+                                            marginBottom: '16px',
+                                            fontSize: '13px',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}>
+                                            <div>
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '11px', display: 'block' }}>
+                                                    {isKlien ? 'PEKERJA (MITRA):' : 'KLIEN (MITRA):'}
+                                                </span>
+                                                <strong style={{ color: 'var(--text-main)' }}>{mitra.nama_lengkap}</strong>
+                                            </div>
+                                            {mitra.no_whatsapp && (
+                                                <a 
+                                                    href={`https://wa.me/${mitra.no_whatsapp}`} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    style={{ 
+                                                        color: 'var(--accent-green)', 
+                                                        fontWeight: '700', 
+                                                        textDecoration: 'none',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        borderBottom: '1.5px solid var(--accent-green)'
+                                                    }}
+                                                >
+                                                    💬 Hubungi WA
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <hr className="divider-dashed" style={{ margin: '0 0 12px', borderColor: 'var(--border-ink)' }} />
+
+                                    {/* Detail Pembayaran */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>Upah Jasa:</span>
+                                            <span>Rp {quest.upah_jasa?.toLocaleString('id-ID')}</span>
+                                        </div>
+                                        {quest.nominal_talangan > 0 && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>Uang Talangan:</span>
+                                                <span>Rp {quest.nominal_talangan?.toLocaleString('id-ID')}</span>
+                                            </div>
+                                        )}
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            justifyContent: 'space-between', 
+                                            alignItems: 'center', 
+                                            marginTop: '6px',
+                                            paddingTop: '6px',
+                                            borderTop: '1px dashed var(--border-ink)' 
+                                        }}>
+                                            <span style={{ fontWeight: '700', color: 'var(--text-main)' }}>
+                                                {isKlien ? 'Total Pengeluaran:' : 'Total Pendapatan:'}
+                                            </span>
+                                            <span style={{ 
+                                                fontSize: '16px', 
+                                                fontWeight: '800', 
+                                                color: isKlien ? 'var(--accent-coral)' : 'var(--accent-green)' 
+                                            }}>
+                                                {isKlien ? '-' : '+'} Rp {totalUang.toLocaleString('id-ID')}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Tanggal Transaksi */}
+                                    <div style={{ 
+                                        fontSize: '11px', 
+                                        color: 'var(--text-muted)', 
+                                        textAlign: 'right', 
+                                        marginTop: '12px' 
+                                    }}>
+                                        Dibuat pada: {new Date(quest.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </div>
                                 </div>
                             );
