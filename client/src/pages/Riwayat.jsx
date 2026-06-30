@@ -18,7 +18,8 @@ const Riwayat = () => {
     const fetchHistory = async () => {
         try {
             const API_URL = import.meta.env.VITE_API_URL || '';
-            const response = await fetch(`${API_URL}/api/quests/history?user_id=${MY_USER_ID}`);
+            const cleanApiUrl = API_URL.replace(/\/$/, '');
+            const response = await fetch(`${cleanApiUrl}/api/quests/history?user_id=${MY_USER_ID}`);
             const data = await response.json();
             if (data.success) {
                 setHistoryList(data.data);
