@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import axios from 'axios';
 import LandingLogin from './pages/LandingLogin';
 import LengkapiProfil from './pages/LengkapiProfil';
 import Beranda from './pages/Beranda';
@@ -11,6 +12,9 @@ import Register from './pages/Register';
 import Riwayat from './pages/Riwayat';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
+
+// Atur base URL API untuk production di Vercel
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
 function App() {
   return (
