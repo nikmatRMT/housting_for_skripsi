@@ -116,10 +116,21 @@ export default function BuatTugas() {
             return;
         }
 
-        const nominalTalanganNum = kategori === 'jastip' ? Number(talangan || 0) : 0;
-        if (kategori === 'jastip' && nominalTalanganNum > batasTalangan) {
-            toast.error(`GAGAL: Nominal talangan (Rp ${nominalTalanganNum.toLocaleString('id-ID')}) melebihi batas talangan akun Anda (Rp ${batasTalangan.toLocaleString('id-ID')}).`);
+        if (Number(upahJasa) < 2000) {
+            toast.error('Upah Lelah Pekerja tidak masuk akal! Harap berikan nominal minimal Rp 2.000.');
             return;
+        }
+
+        const nominalTalanganNum = kategori === 'jastip' ? Number(talangan || 0) : 0;
+        if (kategori === 'jastip') {
+            if (nominalTalanganNum < 0) {
+                toast.error('Nominal talangan tidak boleh bernilai negatif!');
+                return;
+            }
+            if (nominalTalanganNum > batasTalangan) {
+                toast.error(`GAGAL: Nominal talangan (Rp ${nominalTalanganNum.toLocaleString('id-ID')}) melebihi batas talangan akun Anda (Rp ${batasTalangan.toLocaleString('id-ID')}).`);
+                return;
+            }
         }
 
         setIsSubmitting(true);
@@ -352,6 +363,18 @@ export default function BuatTugas() {
                             <label className="form-label">Dana Talangan Pekerja (Rp) — <span style={{ color: 'var(--text-muted)', fontWeight: '400' }}>Opsional</span></label>
                             <input type="number" value={talangan} onChange={(e) => setTalangan(e.target.value)} placeholder="Contoh: 15000" className="form-input" id="buat-talangan" />
                             <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Maksimal talangan akun Anda: Rp {batasTalangan.toLocaleString('id-ID')}</p>
+                            {Number(talangan) > batasTalangan && (
+                                <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>Nominal talangan melebihi limit batas talangan akun Anda (Maks Rp {batasTalangan.toLocaleString('id-ID')})!</span>
+                                </div>
+                            )}
+                            {Number(talangan) < 0 && (
+                                <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>Nominal talangan tidak boleh bernilai negatif!</span>
+                                </div>
+                            )}
                         </div>
                     )}
 
