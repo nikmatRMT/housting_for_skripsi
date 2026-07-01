@@ -103,12 +103,14 @@ export default function Beranda() {
                     }
                 },
                 (err) => {
-                    if (!locationError) {
+                    // Abaikan jika error hanya karena pencarian sinyal lambat (timeout)
+                    const isTimeout = err.code === 3 || (err.message && err.message.toLowerCase().includes('timeout'));
+                    if (!isTimeout && !locationError) {
                         setLocationError(true);
                         fetchQuests(-3.440, 114.836);
                     }
                 },
-                { enableHighAccuracy: true, timeout: 4000 }
+                { enableHighAccuracy: true, timeout: 8000 }
             );
         }, 5000);
 
