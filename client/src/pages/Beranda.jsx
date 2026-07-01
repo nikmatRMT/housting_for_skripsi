@@ -114,7 +114,10 @@ export default function Beranda() {
 
     const handleTakeQuest = async (questId) => {
         try {
-            const res = await axios.put(`/api/quests/${questId}/take`, { pekerja_id: MY_USER_ID });
+            const res = await axios.put(`/api/quests/${questId}/take`, { 
+                pekerja_id: MY_USER_ID,
+                jarak_meter: selectedQuest?.jarak_meter || 0
+            });
             if (res.data.success) {
                 toast.success('Berhasil! Segera laksanakan tugas ini.');
                 navigate('/detail-tugas');

@@ -69,6 +69,7 @@ async function seedDatabase() {
             },
             status: 'OPEN',
             pin_rahasia: '1234',
+            jarak_meter: 450, // 450 meter
             expired_at: new Date(Date.now() + 60 * 60 * 1000) // Kedaluwarsa 1 jam lagi
         });
 
@@ -85,7 +86,8 @@ async function seedDatabase() {
                 coordinates: [114.837, -3.441]
             },
             status: 'TAKEN',
-            pin_rahasia: '9876'
+            pin_rahasia: '9876',
+            jarak_meter: 320 // 320 meter
         });
 
         console.log('✅ Data Quest berhasil dibuat beserta Index Geospatial 2dsphere!');

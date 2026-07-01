@@ -113,7 +113,7 @@ exports.getNearbyQuests = async (req, res) => {
 exports.takeQuest = async (req, res) => {
     try {
         const { id } = req.params;
-        const { pekerja_id } = req.body;
+        const { pekerja_id, jarak_meter } = req.body;
 
         // Validasi: Cek apakah pekerja sudah punya tugas aktif (baik sebagai Klien atau Pekerja)
         const activeQuest = await Quest.findOne({ 
@@ -136,7 +136,12 @@ exports.takeQuest = async (req, res) => {
         const quest = await Quest.findOneAndUpdate(
             { _id: id, status: 'OPEN' },
             { 
-                $set: { status: 'TAKEN', pekerja_id: pekerja_id, taken_at: new Date() } 
+                $set: { 
+                    status: 'TAKEN', 
+                    pekerja_id: pekerja_id, 
+                    taken_at: new Date(),
+                    jarak_meter: jarak_meter || 0
+                } 
             },
             { new: true }
         );
@@ -326,7 +331,7 @@ exports.getMyStats = async (req, res) => {
 
             if (completedAt >= startOfDay && completedAt <= endOfDay) {
                 incomeToday += totalUangTunai;
-                distanceTodayKm += (q.upah_jasa / 10000); 
+                distanceTodayKm += (q.jarak_meter || 0) / 1000; 
             }
         });
 

@@ -28,6 +28,10 @@ const questSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    jarak_meter: {
+        type: Number,
+        default: 0
+    },
     // Konfigurasi GeoJSON Point
     lokasi: {
         type: {
