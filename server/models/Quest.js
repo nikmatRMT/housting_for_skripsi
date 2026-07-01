@@ -32,6 +32,11 @@ const questSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    transport_mode: {
+        type: String,
+        enum: ['walk', 'motorcycle'],
+        default: 'walk'
+    },
     // Konfigurasi GeoJSON Point
     lokasi: {
         type: {

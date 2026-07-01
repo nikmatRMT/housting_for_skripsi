@@ -113,7 +113,7 @@ exports.getNearbyQuests = async (req, res) => {
 exports.takeQuest = async (req, res) => {
     try {
         const { id } = req.params;
-        const { pekerja_id, jarak_meter } = req.body;
+        const { pekerja_id, jarak_meter, transport_mode } = req.body;
 
         // Validasi: Cek apakah pekerja sudah punya tugas aktif (baik sebagai Klien atau Pekerja)
         const activeQuest = await Quest.findOne({ 
@@ -140,7 +140,8 @@ exports.takeQuest = async (req, res) => {
                     status: 'TAKEN', 
                     pekerja_id: pekerja_id, 
                     taken_at: new Date(),
-                    jarak_meter: jarak_meter || 0
+                    jarak_meter: jarak_meter || 0,
+                    transport_mode: transport_mode || 'walk'
                 } 
             },
             { new: true }
@@ -318,6 +319,8 @@ exports.getMyStats = async (req, res) => {
         let incomeMonth = 0;
         let questsMonth = 0;
         let distanceTodayKm = 0;
+        let langkahToday = 0;
+        let kaloriToday = 0;
 
         completedQuests.forEach(q => {
             // Gunakan waktu selesai sebenarnya, atau fallback ke waktu saat ini jika data lama
@@ -331,7 +334,17 @@ exports.getMyStats = async (req, res) => {
 
             if (completedAt >= startOfDay && completedAt <= endOfDay) {
                 incomeToday += totalUangTunai;
-                distanceTodayKm += (q.jarak_meter || 0) / 1000; 
+                const distanceKm = (q.jarak_meter || 0) / 1000;
+                distanceTodayKm += distanceKm; 
+                
+                if (q.transport_mode === 'motorcycle') {
+                    // Naik motor: langkah = 0, kalori = 15 per KM
+                    kaloriToday += Math.round(distanceKm * 15);
+                } else {
+                    // Jalan kaki: langkah = 1300 per KM, kalori = 55 per KM
+                    langkahToday += Math.round(distanceKm * 1300);
+                    kaloriToday += Math.round(distanceKm * 55);
+                }
             }
         });
 
@@ -343,7 +356,9 @@ exports.getMyStats = async (req, res) => {
                 incomeToday,
                 incomeMonth,
                 questsMonth,
-                distanceTodayKm: parseFloat(distanceTodayKm.toFixed(2))
+                distanceTodayKm: parseFloat(distanceTodayKm.toFixed(2)),
+                langkahToday,
+                kaloriToday
             }
         });
     } catch (error) {

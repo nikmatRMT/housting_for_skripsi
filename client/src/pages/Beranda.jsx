@@ -43,6 +43,7 @@ export default function Beranda() {
         distanceTodayKm: 0
     });
     const [locationError, setLocationError] = useState(false);
+    const [transportMode, setTransportMode] = useState('walk');
 
     useEffect(() => {
         if (!isGuest) {
@@ -116,7 +117,8 @@ export default function Beranda() {
         try {
             const res = await axios.put(`/api/quests/${questId}/take`, { 
                 pekerja_id: MY_USER_ID,
-                jarak_meter: selectedQuest?.jarak_meter || 0
+                jarak_meter: selectedQuest?.jarak_meter || 0,
+                transport_mode: transportMode
             });
             if (res.data.success) {
                 toast.success('Berhasil! Segera laksanakan tugas ini.');
@@ -132,8 +134,8 @@ export default function Beranda() {
     // --- Perhitungan Gamifikasi ---
     const targetHarian = 50000;
     const progressPersen = Math.min(100, Math.round((stats.incomeToday / targetHarian) * 100));
-    const langkah = Math.round(stats.distanceTodayKm * 1300);
-    const kalori = Math.round(stats.distanceTodayKm * 55);
+    const langkah = stats.langkahToday || 0;
+    const kalori = stats.kaloriToday || 0;
 
     return (
         <>
@@ -418,9 +420,60 @@ export default function Beranda() {
                             </p>
                         </div>
 
+                        {/* Pilihan Transportasi */}
+                        {!isGuest && (
+                            <div style={{ marginBottom: '20px' }}>
+                                <span className="section-label" style={{ marginBottom: '8px' }}>MODE TRANSPORTASI KE LOKASI</span>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setTransportMode('walk')}
+                                        style={{ 
+                                            flex: 1, 
+                                            padding: '10px', 
+                                            borderRadius: '8px', 
+                                            border: '2px solid var(--border-ink)',
+                                            backgroundColor: transportMode === 'walk' ? 'var(--accent-green)' : 'var(--surface)',
+                                            color: 'var(--text-main)',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            boxShadow: transportMode === 'walk' ? '2px 2px 0px var(--border-ink)' : 'none'
+                                        }}
+                                    >
+                                        🚶 Jalan Kaki
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setTransportMode('motorcycle')}
+                                        style={{ 
+                                            flex: 1, 
+                                            padding: '10px', 
+                                            borderRadius: '8px', 
+                                            border: '2px solid var(--border-ink)',
+                                            backgroundColor: transportMode === 'motorcycle' ? 'var(--accent-coral)' : 'var(--surface)',
+                                            color: 'var(--text-main)',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            boxShadow: transportMode === 'motorcycle' ? '2px 2px 0px var(--border-ink)' : 'none'
+                                        }}
+                                    >
+                                        🏍️ Sepeda Motor
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Action Buttons */}
                         <div style={{ display: 'flex', gap: '12px' }}>
-                            <button onClick={() => setSelectedQuest(null)} className="btn btn-outline" style={{ flex: 1 }}>BATAL</button>
+                            <button onClick={() => { setSelectedQuest(null); setTransportMode('walk'); }} className="btn btn-outline" style={{ flex: 1 }}>BATAL</button>
                             {isGuest ? (
                                 <button onClick={() => { toast.error('Anda harus Login/Daftar akun sungguhan untuk bisa mengambil tugas dan mendapatkan uang!'); navigate('/login'); }} className="btn btn-green" style={{ flex: 1 }}>LOGIN UNTUK AMBIL</button>
                             ) : (
