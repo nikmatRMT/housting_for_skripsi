@@ -348,7 +348,18 @@ export default function Beranda() {
                         
                         {/* Map */}
                         <div style={{ height: '170px', backgroundColor: 'var(--bg-main)', border: '2px solid var(--border-ink)', borderRadius: 'var(--radius-medium)', marginBottom: '16px', overflow: 'hidden' }}>
-                            <MapContainer center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} zoom={16} style={{ height: '100%', width: '100%' }} zoomControl={false}>
+                            <MapContainer 
+                                center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} 
+                                zoom={16} 
+                                style={{ height: '100%', width: '100%' }} 
+                                zoomControl={false}
+                                dragging={false}
+                                touchZoom={false}
+                                doubleClickZoom={false}
+                                scrollWheelZoom={false}
+                                boxZoom={false}
+                                keyboard={false}
+                            >
                                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                                 <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
                             </MapContainer>
