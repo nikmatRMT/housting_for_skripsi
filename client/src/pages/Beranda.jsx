@@ -102,10 +102,10 @@ export default function Beranda() {
             (err) => {
                 console.error(err);
                 const errMsg = err.message ? err.message.toLowerCase() : '';
-                if (errMsg.includes('location disabled') || errMsg.includes('disabled') || err.code === 2) {
+                if (errMsg.includes('location disabled') || errMsg.includes('disabled') || errMsg.includes('enabled') || errMsg.includes('enable') || err.code === 2) {
                     toast.error("Sensor GPS HP Anda belum aktif! Harap tarik menu atas HP Anda dan nyalakan sakelar 'Lokasi' (GPS).");
                 } else {
-                    toast.error("Gagal mengaktifkan GPS. Harap periksa perizinan aplikasi di setelan HP Anda.");
+                    toast.error(`Gagal mengaktifkan GPS: ${err.message || err}. Harap periksa perizinan aplikasi di setelan HP Anda.`);
                 }
             },
             { enableHighAccuracy: true }
