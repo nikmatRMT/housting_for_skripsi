@@ -234,7 +234,8 @@ export default function DetailTugas() {
 
     if (!quest) {
         return (
-            <div className="fade-up" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '100px' }}>
+            <>
+                <div className="fade-up" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '100px' }}>
                 <header style={{ padding: '20px', backgroundColor: 'var(--surface)', borderBottom: '2px solid var(--border-ink)' }}>
                     <h2>Tugas Aktif</h2>
                 </header>
@@ -251,8 +252,9 @@ export default function DetailTugas() {
                     <h3 style={{ marginBottom: '8px' }}>Belum Ada Tugas Aktif</h3>
                     <p style={{ fontSize: '14px' }}>Anda tidak sedang membuat atau mengerjakan tugas apapun saat ini.</p>
                 </div>
+                </div>
                 <BottomNav activePage="tugas" />
-            </div>
+            </>
         );
     }
 
@@ -268,7 +270,8 @@ export default function DetailTugas() {
     }
 
     return (
-        <div className="fade-up" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '100px' }}>
+        <>
+            <div className="fade-up" style={{ backgroundColor: 'var(--bg-main)', minHeight: '100vh', paddingBottom: '100px' }}>
             
             {/* Success Overlay */}
             {showSuccessUI && (
@@ -460,7 +463,8 @@ export default function DetailTugas() {
                     </div>
                 )}
             </div>
+            </div>
             <BottomNav activePage="tugas" />
-        </div>
+        </>
     );
 }

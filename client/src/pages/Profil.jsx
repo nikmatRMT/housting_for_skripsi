@@ -55,7 +55,8 @@ export default function Profil() {
     };
 
     return (
-        <div className="fade-up" style={{ paddingBottom: '100px', backgroundColor: 'var(--bg-main)', minHeight: '100vh' }}>
+        <>
+            <div className="fade-up" style={{ paddingBottom: '100px', backgroundColor: 'var(--bg-main)', minHeight: '100vh' }}>
 
             {/* Header */}
             <header style={{ padding: '20px', backgroundColor: 'var(--surface)', borderBottom: '2px solid var(--border-ink)' }}>
@@ -211,7 +212,8 @@ export default function Profil() {
 
             </div>
 
+            </div>
             <BottomNav activePage="profil" />
-        </div>
+        </>
     );
 }

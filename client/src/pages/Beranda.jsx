@@ -133,7 +133,8 @@ export default function Beranda() {
     const kalori = Math.round(stats.distanceTodayKm * 55);
 
     return (
-        <div className="fade-up" style={{ paddingBottom: '100px' }}>
+        <>
+            <div className="fade-up" style={{ paddingBottom: '100px' }}>
             
             {/* ── Header ────────────────────────────────── */}
             <header style={{ 
@@ -427,8 +428,9 @@ export default function Beranda() {
                 </div>
             )}
             
+            </div>
             {/* ── Bottom Navigation ─────────────────────── */}
             <BottomNav activePage="beranda" />
-        </div>
+        </>
     );
 }
