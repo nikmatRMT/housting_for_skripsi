@@ -27,7 +27,7 @@ function RoutingMachine({ userLoc, clientLoc }) {
         if (!userLoc || !clientLoc) return;
         const routingControl = L.Routing.control({
             waypoints: [L.latLng(userLoc[0], userLoc[1]), L.latLng(clientLoc[0], clientLoc[1])],
-            routeWhileDragging: false, addWaypoints: false, showAlternatives: false, fitSelectedRoutes: true, show: false,
+            routeWhileDragging: false, addWaypoints: false, showAlternatives: false, fitSelectedRoutes: false, show: false,
             lineOptions: { styles: [{ color: '#2ba0ff', weight: 5, opacity: 0.8 }] },
             createMarker: function() { return null; }
         }).addTo(map);
