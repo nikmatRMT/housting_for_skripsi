@@ -260,13 +260,19 @@ export default function DetailTugas() {
 
     let otherPartyName = "Belum Diambil";
     if (isKlien) {
-        if (quest.status === 'TAKEN' && typeof quest.pekerja_id === 'object' && quest.pekerja_id) {
+        if (quest.pekerja_id && typeof quest.pekerja_id === 'object') {
             otherPartyName = quest.pekerja_id.nama_lengkap;
-        } else { otherPartyName = "Menunggu Pekerja (Belum Diambil)"; }
+        } else if (quest.pekerja_id) {
+            otherPartyName = "Pekerja Terdaftar";
+        } else {
+            otherPartyName = "Menunggu Pekerja...";
+        }
     } else {
-        if (typeof quest.pembuat_id === 'object' && quest.pembuat_id) {
+        if (quest.pembuat_id && typeof quest.pembuat_id === 'object') {
             otherPartyName = quest.pembuat_id.nama_lengkap;
-        } else { otherPartyName = "Klien (Pembuat Tugas)"; }
+        } else {
+            otherPartyName = "Klien (Pembuat Tugas)";
+        }
     }
 
     return (
@@ -316,10 +322,15 @@ export default function DetailTugas() {
                     </h3>
                     <p style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {isKlien 
-                            ? (quest.status === 'TAKEN' 
-                                ? (liveDistance !== null ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> Sedang menuju lokasi ({Math.round(liveDistance)} m)</> : 'Sedang menuju lokasi') 
-                                : 'Menunggu...') 
-                            : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> {liveDistance !== null ? Math.round(liveDistance) : Math.round(quest.jarak_meter || 0)} meter dari Anda</>}
+                            ? (quest.status === 'IN_PROGRESS'
+                                ? 'Pekerja sedang mengerjakan tugas di lokasi Anda'
+                                : quest.status === 'TAKEN' 
+                                    ? (liveDistance !== null ? <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> Sedang menuju lokasi ({Math.round(liveDistance)} m)</> : 'Sedang menuju lokasi') 
+                                    : 'Menunggu...') 
+                            : (quest.status === 'IN_PROGRESS'
+                                ? 'Anda sedang mengerjakan tugas ini di lokasi'
+                                : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-coral)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> {liveDistance !== null ? Math.round(liveDistance) : Math.round(quest.jarak_meter || 0)} meter dari Anda</>)
+                        }
                     </p>
                 </div>
             </div>
