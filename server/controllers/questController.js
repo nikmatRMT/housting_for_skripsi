@@ -264,7 +264,9 @@ exports.getMyActiveQuest = async (req, res) => {
                 { pekerja_id: user_id }
             ],
             status: { $in: ['OPEN', 'TAKEN', 'IN_PROGRESS'] }
-        });
+        })
+        .populate('pembuat_id', 'nama_lengkap no_whatsapp email')
+        .populate('pekerja_id', 'nama_lengkap no_whatsapp email');
 
         if (!activeQuest) {
             return res.status(404).json({ success: false, message: "Tidak ada tugas aktif." });
