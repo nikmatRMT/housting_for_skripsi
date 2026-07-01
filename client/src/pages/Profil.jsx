@@ -101,7 +101,22 @@ export default function Profil() {
                             {isEditing ? (
                                 <div style={{ marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} className="form-input" style={{ textAlign: 'center' }} placeholder="Nama Lengkap" />
-                                    <input type="text" value={editWA} onChange={(e) => setEditWA(e.target.value)} className="form-input" style={{ textAlign: 'center' }} placeholder="Nomor WA (contoh: 0812...)" />
+                                    <input 
+                                        type="text" 
+                                        value={editWA} 
+                                        onChange={(e) => {
+                                            const cleanValue = e.target.value.replace(/[^0-9]/g, '');
+                                            if (cleanValue.length <= 15) {
+                                                setEditWA(cleanValue);
+                                            }
+                                        }} 
+                                        maxLength={15}
+                                        pattern="[0-9]*"
+                                        inputMode="numeric"
+                                        className="form-input" 
+                                        style={{ textAlign: 'center' }} 
+                                        placeholder="Nomor WA (contoh: 0812...)" 
+                                    />
                                 </div>
                             ) : (
                                 <>

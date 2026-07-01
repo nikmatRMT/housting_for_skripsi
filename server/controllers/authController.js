@@ -15,6 +15,11 @@ exports.register = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Semua kolom wajib diisi!' });
         }
 
+        // Validasi panjang nomor WA
+        if (no_whatsapp.length < 10 || no_whatsapp.length > 15) {
+            return res.status(400).json({ success: false, message: 'Nomor WhatsApp harus berukuran antara 10 hingga 15 digit!' });
+        }
+
         // Cek apakah email sudah terdaftar
         const existingUser = await User.findOne({ email });
         if (existingUser) {

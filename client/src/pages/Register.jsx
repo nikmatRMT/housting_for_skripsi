@@ -17,7 +17,15 @@ export default function Register() {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if (name === 'no_whatsapp') {
+            const cleanValue = value.replace(/[^0-9]/g, '');
+            if (cleanValue.length <= 15) {
+                setFormData({ ...formData, [name]: cleanValue });
+            }
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleRegister = async (e) => {
@@ -100,6 +108,9 @@ export default function Register() {
                             value={formData.no_whatsapp}
                             onChange={handleChange}
                             required
+                            maxLength={15}
+                            pattern="[0-9]*"
+                            inputMode="numeric"
                             className="form-input"
                             placeholder="Contoh: 08123456789"
                             id="register-whatsapp"
