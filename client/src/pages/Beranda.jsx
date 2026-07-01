@@ -82,7 +82,8 @@ export default function Beranda() {
                         setLocationError(true);
                     }
                     fetchQuests(-3.440, 114.836);
-                }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         } else {
             fetchQuests(-3.440, 114.836);
