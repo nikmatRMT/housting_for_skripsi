@@ -3,7 +3,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import BottomNav from '../components/BottomNav';
+
+const customIcon = new L.DivIcon({
+    html: `<div style="color: var(--accent-coral, #f87171);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
+    className: 'custom-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32]
+});
 
 function MapResizeHandler({ center }) {
     const map = useMap();
@@ -377,7 +385,7 @@ export default function Beranda() {
                             >
                                 <MapResizeHandler center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
                                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
+                                <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} icon={customIcon} />
                             </MapContainer>
                         </div>
 
