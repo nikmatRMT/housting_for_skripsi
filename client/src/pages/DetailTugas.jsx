@@ -36,14 +36,51 @@ function RoutingMachine({ userLoc, clientLoc }) {
     return null;
 }
 
-function MapResizeHandler({ isExpanded }) {
+function MapResizeHandler({ isExpanded, clientLoc }) {
     const map = useMap();
+    
     useEffect(() => {
         map.invalidateSize();
         const t1 = setTimeout(() => map.invalidateSize(), 50);
         const t2 = setTimeout(() => map.invalidateSize(), 150);
         return () => { clearTimeout(t1); clearTimeout(t2); };
     }, [isExpanded, map]);
+
+    useEffect(() => {
+        if (!clientLoc) return;
+
+        const zoomControl = document.querySelector('.leaflet-control-zoom');
+
+        if (!isExpanded) {
+            // Matikan semua interaksi peta agar tidak bisa digeser-geser saat kecil
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.scrollWheelZoom.disable();
+            map.boxZoom.disable();
+            map.keyboard.disable();
+            if (map.tap) map.tap.disable();
+
+            // Sembunyikan tombol zoom bawaan Leaflet
+            if (zoomControl) zoomControl.style.display = 'none';
+
+            // Kembalikan ke koordinat utama
+            map.setView(clientLoc, 16);
+        } else {
+            // Nyalakan kembali interaksi saat peta diperbesar
+            map.dragging.enable();
+            map.touchZoom.enable();
+            map.doubleClickZoom.enable();
+            map.scrollWheelZoom.enable();
+            map.boxZoom.enable();
+            map.keyboard.enable();
+            if (map.tap) map.tap.enable();
+
+            // Tampilkan tombol zoom bawaan Leaflet
+            if (zoomControl) zoomControl.style.display = 'block';
+        }
+    }, [isExpanded, map, clientLoc]);
+
     return null;
 }
 
@@ -338,7 +375,7 @@ export default function DetailTugas() {
                                 </button>
                             </div>
                         </div>
-                        <MapResizeHandler isExpanded={isMapExpanded} />
+                        <MapResizeHandler isExpanded={isMapExpanded} clientLoc={[quest.lokasi.coordinates[1], quest.lokasi.coordinates[0]]} />
                         <TileLayer keepBuffer={50} updateWhenZooming={false} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                         <Marker position={[quest.lokasi.coordinates[1], quest.lokasi.coordinates[0]]} icon={customIcon}><Popup>Titik Lokasi Klien</Popup></Marker>
                         {(!isKlien && userLocation) && (
