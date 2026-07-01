@@ -92,7 +92,7 @@ export default function Beranda() {
         );
     }, []);
 
-    // Deteksi perubahan status GPS (aktif/nonaktif) secara berkala di latar belakang setiap 10 detik
+    // Deteksi perubahan status GPS (aktif/nonaktif) secara berkala di latar belakang setiap 5 detik
     useEffect(() => {
         const intervalId = setInterval(() => {
             getCurrentLocation(
@@ -110,7 +110,7 @@ export default function Beranda() {
                 },
                 { enableHighAccuracy: true, timeout: 4000 }
             );
-        }, 10000);
+        }, 5000);
 
         return () => clearInterval(intervalId);
     }, [locationError]);
