@@ -88,6 +88,21 @@ export default function Beranda() {
         );
     }, []);
 
+    const handleActivateGPS = () => {
+        getCurrentLocation(
+            (pos) => {
+                setLocationError(false);
+                fetchQuests(pos.coords.latitude, pos.coords.longitude);
+                toast.success("Akses GPS berhasil diaktifkan!");
+            },
+            (err) => {
+                console.error(err);
+                toast.error("Gagal mengaktifkan GPS. Harap periksa setelan HP Anda.");
+            },
+            { enableHighAccuracy: true }
+        );
+    };
+
     const handleDeleteQuest = async (questId) => {
         if (!window.confirm("Yakin ingin membatalkan dan menghapus tugas ini secara permanen?")) return;
         
@@ -184,12 +199,24 @@ export default function Beranda() {
                             Cara Mengaktifkan Kembali:
                         </p>
                         {Capacitor.isNativePlatform() ? (
-                            <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <li>Masuk ke <strong>Setelan / Pengaturan HP</strong> Anda.</li>
-                                <li>Pilih menu <strong>Aplikasi</strong> &gt; pilih aplikasi <strong>Jasa Warga</strong>.</li>
-                                <li>Pilih menu <strong>Izin (Permissions)</strong> &gt; <strong>Lokasi (Location)</strong> &gt; Pilih <strong>Izinkan saat aplikasi digunakan</strong>.</li>
-                                <li>Keluarkan aplikasi dari latar belakang (close/clear task) lalu buka kembali.</li>
-                            </ol>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <li>Ketuk tombol di bawah untuk mengaktifkan izin GPS bawaan HP secara langsung.</li>
+                                    <li>Jika gagal, silakan buka <strong>Setelan HP &gt; Aplikasi &gt; Jasa Warga &gt; Izin</strong> lalu aktifkan izin <strong>Lokasi</strong>.</li>
+                                </ol>
+                                <button
+                                    onClick={handleActivateGPS}
+                                    className="btn btn-primary"
+                                    style={{ 
+                                        marginTop: '8px', 
+                                        width: '100%',
+                                        backgroundColor: 'var(--accent-green)',
+                                        borderColor: 'var(--border-ink)'
+                                    }}
+                                >
+                                    📍 AKTIFKAN GPS SEKARANG
+                                </button>
+                            </div>
                         ) : (
                             <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 <li>Klik ikon <strong>kunci/gembok (🔒)</strong> atau setelan di sebelah kiri alamat URL web browser Anda.</li>
