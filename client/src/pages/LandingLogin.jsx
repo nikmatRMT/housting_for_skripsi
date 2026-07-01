@@ -91,6 +91,12 @@ export default function LandingLogin() {
                                 placeholder="contoh@email.com"
                                 id="login-email"
                             />
+                            {email.length > 0 && !email.includes('@') && (
+                                <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '8px' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>Format email salah! Harap sertakan simbol '@' (contoh: nama@email.com).</span>
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ marginBottom: '24px' }}>
@@ -104,6 +110,12 @@ export default function LandingLogin() {
                                 placeholder="Masukkan kata sandi"
                                 id="login-password"
                             />
+                            {password.length > 0 && password.length < 6 && (
+                                <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '8px' }}>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <span>Kata sandi terlalu pendek! Minimal adalah 6 karakter.</span>
+                                </div>
+                            )}
                         </div>
 
                         <button 
