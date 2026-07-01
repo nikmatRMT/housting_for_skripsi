@@ -81,6 +81,10 @@ export default function Beranda() {
             },
             (err) => {
                 console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
+                const errMsg = err.message ? err.message.toLowerCase() : '';
+                if (errMsg.includes('location disabled') || errMsg.includes('disabled') || err.code === 2) {
+                    toast.error("Sensor GPS HP Anda belum aktif! Harap aktifkan sakelar 'Lokasi' (GPS) pada HP Anda.");
+                }
                 setLocationError(true);
                 fetchQuests(-3.440, 114.836);
             },
@@ -97,7 +101,12 @@ export default function Beranda() {
             },
             (err) => {
                 console.error(err);
-                toast.error("Gagal mengaktifkan GPS. Harap periksa setelan HP Anda.");
+                const errMsg = err.message ? err.message.toLowerCase() : '';
+                if (errMsg.includes('location disabled') || errMsg.includes('disabled') || err.code === 2) {
+                    toast.error("Sensor GPS HP Anda belum aktif! Harap tarik menu atas HP Anda dan nyalakan sakelar 'Lokasi' (GPS).");
+                } else {
+                    toast.error("Gagal mengaktifkan GPS. Harap periksa perizinan aplikasi di setelan HP Anda.");
+                }
             },
             { enableHighAccuracy: true }
         );

@@ -99,7 +99,12 @@ export default function BuatTugas() {
                 setIsMemuatLokasi(false);
             },
             (error) => {
-                toast.error('Gagal mendapatkan lokasi. Pastikan Anda telah mengizinkan akses lokasi (Location/GPS) di HP/browser Anda. Error: ' + error.message);
+                const errMsg = error.message ? error.message.toLowerCase() : '';
+                if (errMsg.includes('location disabled') || errMsg.includes('disabled') || error.code === 2) {
+                    toast.error("Sensor GPS HP Anda belum aktif! Harap tarik menu atas HP Anda dan nyalakan sakelar 'Lokasi' (GPS).");
+                } else {
+                    toast.error('Gagal mendapatkan lokasi. Pastikan Anda telah mengizinkan akses lokasi (Location/GPS) di HP/browser Anda. Error: ' + error.message);
+                }
                 setIsMemuatLokasi(false);
             },
             { enableHighAccuracy: true }
