@@ -16,7 +16,8 @@ const userSchema = new mongoose.Schema({
     },
     no_whatsapp: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     batas_talangan: {
         type: Number,
