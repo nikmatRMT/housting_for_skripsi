@@ -6,6 +6,7 @@ import L from 'leaflet';
 import axios from 'axios';
 import 'leaflet-routing-machine';
 import BottomNav from '../components/BottomNav';
+import { watchLocation, stopWatchLocation } from '../utils/geolocationHelper';
 
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--color-coral-pop, #ff705d);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
@@ -103,24 +104,22 @@ export default function DetailTugas() {
     const isKlien = pembuatIdString === MY_USER_ID;
 
     useEffect(() => {
-        let watchId;
+        let watchIdPromise;
         if (quest && !isKlien) {
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(
-                    (pos) => {
-                        const newLoc = [pos.coords.latitude, pos.coords.longitude];
-                        setUserLocation(newLoc);
-                        if (quest.lokasi && quest.lokasi.coordinates) {
-                            const clientLatLng = L.latLng(quest.lokasi.coordinates[1], quest.lokasi.coordinates[0]);
-                            const workerLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
-                            setLiveDistance(workerLatLng.distanceTo(clientLatLng));
-                        }
-                        axios.put(`/api/quests/${quest._id}/location`, { latitude: pos.coords.latitude, longitude: pos.coords.longitude }).catch(() => {});
-                    },
-                    () => console.log("Gagal ambil lokasi user"),
-                    { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
-                );
-            }
+            watchIdPromise = watchLocation(
+                (pos) => {
+                    const newLoc = [pos.coords.latitude, pos.coords.longitude];
+                    setUserLocation(newLoc);
+                    if (quest.lokasi && quest.lokasi.coordinates) {
+                        const clientLatLng = L.latLng(quest.lokasi.coordinates[1], quest.lokasi.coordinates[0]);
+                        const workerLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+                        setLiveDistance(workerLatLng.distanceTo(clientLatLng));
+                    }
+                    axios.put(`/api/quests/${quest._id}/location`, { latitude: pos.coords.latitude, longitude: pos.coords.longitude }).catch(() => {});
+                },
+                (err) => console.log("Gagal ambil lokasi user:", err),
+                { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+            );
         } else if (quest && isKlien && (quest.status === 'TAKEN' || quest.status === 'IN_PROGRESS')) {
             const interval = setInterval(async () => {
                 try {
@@ -140,7 +139,13 @@ export default function DetailTugas() {
             }, 5000);
             return () => clearInterval(interval);
         }
-        return () => { if (watchId && navigator.geolocation) navigator.geolocation.clearWatch(watchId); };
+        return () => {
+            if (watchIdPromise) {
+                watchIdPromise.then(id => {
+                    if (id) stopWatchLocation(id);
+                });
+            }
+        };
     }, [quest, isKlien, MY_USER_ID]);
 
     useEffect(() => {

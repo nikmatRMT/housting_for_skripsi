@@ -6,6 +6,8 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import BottomNav from '../components/BottomNav';
 
+import { getCurrentLocation } from '../utils/geolocationHelper';
+
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--accent-coral, #f87171);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
     className: 'custom-marker',
@@ -71,24 +73,18 @@ export default function Beranda() {
             }
         };
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    setLocationError(false);
-                    fetchQuests(pos.coords.latitude, pos.coords.longitude);
-                },
-                (err) => {
-                    console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
-                    if (err.code === 1) { // 1 = PERMISSION_DENIED
-                        setLocationError(true);
-                    }
-                    fetchQuests(-3.440, 114.836);
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
-        } else {
-            fetchQuests(-3.440, 114.836);
-        }
+        getCurrentLocation(
+            (pos) => {
+                setLocationError(false);
+                fetchQuests(pos.coords.latitude, pos.coords.longitude);
+            },
+            (err) => {
+                console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
+                setLocationError(true);
+                fetchQuests(-3.440, 114.836);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     }, []);
 
     const handleDeleteQuest = async (questId) => {

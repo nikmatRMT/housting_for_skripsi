@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
+import { getCurrentLocation } from '../utils/geolocationHelper';
 
 // Ikon kustom agar tidak bergantung pada aset lokal Leaflet
 const customIcon = new L.DivIcon({
@@ -88,12 +89,8 @@ export default function BuatTugas() {
     }, []);
 
     const handleDapatkanLokasi = () => {
-        if (!navigator.geolocation) {
-            toast.error('Maaf, browser Anda tidak mendukung fitur lokasi GPS.');
-            return;
-        }
         setIsMemuatLokasi(true);
-        navigator.geolocation.getCurrentPosition(
+        getCurrentLocation(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 setLokasi([latitude, longitude]);
@@ -102,7 +99,7 @@ export default function BuatTugas() {
                 setIsMemuatLokasi(false);
             },
             (error) => {
-                toast.error('Gagal mendapatkan lokasi. Pastikan Anda telah mengizinkan akses lokasi (Location/GPS) di browser Anda. Error: ' + error.message);
+                toast.error('Gagal mendapatkan lokasi. Pastikan Anda telah mengizinkan akses lokasi (Location/GPS) di HP/browser Anda. Error: ' + error.message);
                 setIsMemuatLokasi(false);
             },
             { enableHighAccuracy: true }
