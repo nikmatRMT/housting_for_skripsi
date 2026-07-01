@@ -43,10 +43,21 @@ export default function Beranda() {
         incomeToday: 0,
         incomeMonth: 0,
         questsMonth: 0,
-        distanceTodayKm: 0
+        distanceTodayKm: 0,
+        langkahToday: 0,
+        kaloriToday: 0
     });
     const [locationError, setLocationError] = useState(false);
     const [transportMode, setTransportMode] = useState('walk');
+
+    // State sensor langkah lokal
+    const [sensorSteps, setSensorSteps] = useState(0);
+    const [sensorCalories, setSensorCalories] = useState(0);
+
+    const getTodayKey = () => {
+        const now = new Date();
+        return now.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    };
 
     useEffect(() => {
         if (!isGuest) {
@@ -58,6 +69,13 @@ export default function Beranda() {
                 })
                 .catch(err => console.error("Gagal load stats:", err));
         }
+
+        // Muat data sensor lokal hari ini
+        const todayStr = getTodayKey();
+        const storedSteps = parseInt(localStorage.getItem(`steps_${todayStr}`)) || 0;
+        const storedCalories = parseFloat(localStorage.getItem(`calories_${todayStr}`)) || 0;
+        setSensorSteps(storedSteps);
+        setSensorCalories(storedCalories);
     }, [isGuest, MY_USER_ID]);
 
     useEffect(() => {
@@ -116,6 +134,55 @@ export default function Beranda() {
 
         return () => clearInterval(intervalId);
     }, [locationError]);
+
+    // Registrasi sensor gerak HP akselerometer untuk real-time Pedometer
+    useEffect(() => {
+        let lastStepTime = 0;
+        let isPeak = false;
+
+        const handleMotion = (event) => {
+            const acc = event.accelerationIncludingGravity;
+            if (!acc) return;
+
+            const x = acc.x || 0;
+            const y = acc.y || 0;
+            const z = acc.z || 0;
+
+            const magnitude = Math.sqrt(x * x + y * y + z * z);
+            const now = Date.now();
+
+            // Debounce 350ms agar langkah tidak terhitung ganda terlalu cepat
+            if (now - lastStepTime < 350) return;
+
+            // Hentakan ayunan langkah (gaya gravitasi normal bumi ~9.8 m/s^2)
+            if (magnitude > 12.5 && !isPeak) {
+                isPeak = true;
+            }
+
+            // Kembali ke gaya normal (valley) menyelesaikan satu langkah
+            if (magnitude < 8.5 && isPeak) {
+                isPeak = false;
+                lastStepTime = now;
+
+                setSensorSteps((prevSteps) => {
+                    const newSteps = prevSteps + 1;
+                    const todayStr = getTodayKey();
+                    localStorage.setItem(`steps_${todayStr}`, newSteps);
+                    return newSteps;
+                });
+
+                setSensorCalories((prevCalories) => {
+                    const newCalories = prevCalories + 0.04;
+                    const todayStr = getTodayKey();
+                    localStorage.setItem(`calories_${todayStr}`, newCalories.toFixed(2));
+                    return newCalories;
+                });
+            }
+        };
+
+        window.addEventListener('devicemotion', handleMotion);
+        return () => window.removeEventListener('devicemotion', handleMotion);
+    }, []);
 
     const handleActivateGPS = () => {
         getCurrentLocation(
@@ -180,8 +247,9 @@ export default function Beranda() {
     // --- Perhitungan Gamifikasi ---
     const targetHarian = 50000;
     const progressPersen = Math.min(100, Math.round((stats.incomeToday / targetHarian) * 100));
-    const langkah = stats.langkahToday || 0;
-    const kalori = stats.kaloriToday || 0;
+    const langkah = (stats.langkahToday || 0) + sensorSteps;
+    const kalori = Math.round((stats.kaloriToday || 0) + sensorCalories);
+    const distanceTodayKm = (stats.distanceTodayKm + (sensorSteps * 0.00075)).toFixed(2);
 
     return (
         <>
@@ -350,7 +418,7 @@ export default function Beranda() {
                                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
                             </div>
                             <div style={{ position: 'relative', zIndex: 1 }}>
-                                <p style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>{stats.distanceTodayKm}</p>
+                                <p style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-main)', margin: 0 }}>{distanceTodayKm}</p>
                                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: '600' }}>Km</p>
                             </div>
                         </div>
