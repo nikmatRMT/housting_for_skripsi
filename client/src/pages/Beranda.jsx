@@ -92,6 +92,29 @@ export default function Beranda() {
         );
     }, []);
 
+    // Deteksi perubahan status GPS (aktif/nonaktif) secara berkala di latar belakang setiap 10 detik
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            getCurrentLocation(
+                (pos) => {
+                    if (locationError) {
+                        setLocationError(false);
+                        fetchQuests(pos.coords.latitude, pos.coords.longitude);
+                    }
+                },
+                (err) => {
+                    if (!locationError) {
+                        setLocationError(true);
+                        fetchQuests(-3.440, 114.836);
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 4000 }
+            );
+        }, 10000);
+
+        return () => clearInterval(intervalId);
+    }, [locationError]);
+
     const handleActivateGPS = () => {
         getCurrentLocation(
             (pos) => {
