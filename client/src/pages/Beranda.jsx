@@ -6,6 +6,7 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import BottomNav from '../components/BottomNav';
 
+import { Capacitor } from '@capacitor/core';
 import { getCurrentLocation } from '../utils/geolocationHelper';
 
 const customIcon = new L.DivIcon({
@@ -182,11 +183,20 @@ export default function Beranda() {
                         <p style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '4px' }}>
                             Cara Mengaktifkan Kembali:
                         </p>
-                        <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <li>Klik ikon <strong>kunci/gembok (🔒)</strong> atau setelan di sebelah kiri alamat URL web browser Anda.</li>
-                            <li>Ubah izin <strong>Lokasi (Location)</strong> menjadi <strong>Izinkan (Allow)</strong>.</li>
-                            <li>Segarkan (refresh) halaman ini untuk memuat ulang lokasi Anda.</li>
-                        </ol>
+                        {Capacitor.isNativePlatform() ? (
+                            <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <li>Masuk ke <strong>Setelan / Pengaturan HP</strong> Anda.</li>
+                                <li>Pilih menu <strong>Aplikasi</strong> &gt; pilih aplikasi <strong>Jasa Warga</strong>.</li>
+                                <li>Pilih menu <strong>Izin (Permissions)</strong> &gt; <strong>Lokasi (Location)</strong> &gt; Pilih <strong>Izinkan saat aplikasi digunakan</strong>.</li>
+                                <li>Keluarkan aplikasi dari latar belakang (close/clear task) lalu buka kembali.</li>
+                            </ol>
+                        ) : (
+                            <ol style={{ paddingLeft: '20px', margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <li>Klik ikon <strong>kunci/gembok (🔒)</strong> atau setelan di sebelah kiri alamat URL web browser Anda.</li>
+                                <li>Ubah izin <strong>Lokasi (Location)</strong> menjadi <strong>Izinkan (Allow)</strong>.</li>
+                                <li>Segarkan (refresh) halaman ini untuk memuat ulang lokasi Anda.</li>
+                            </ol>
+                        )}
                     </div>
                 )}
                 
