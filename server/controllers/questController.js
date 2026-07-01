@@ -300,16 +300,10 @@ exports.getMyStats = async (req, res) => {
         const { user_id } = req.query;
         if (!user_id) return res.status(400).json({ success: false, message: "User ID diperlukan" });
 
-        // Tentukan rentang waktu Hari Ini
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date();
-        endOfDay.setHours(23, 59, 59, 999);
-
-        // Tentukan rentang waktu Bulan Ini
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+        const now = new Date();
+        // Dapatkan format tanggal YYYY-MM-DD dan YYYY-MM di timezone Asia/Jakarta (WIB)
+        const todayStr = now.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+        const currentMonthStr = todayStr.slice(0, 7);
 
         // Cari semua tugas selesai milik pekerja ini
         const completedQuests = await Quest.find({
@@ -329,12 +323,15 @@ exports.getMyStats = async (req, res) => {
             const completedAt = q.completed_at || new Date(); 
             const totalUangTunai = q.upah_jasa + (q.nominal_talangan || 0);
             
-            if (completedAt >= startOfMonth) {
+            const completedAtStr = completedAt.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+            const completedAtMonthStr = completedAtStr.slice(0, 7);
+            
+            if (completedAtMonthStr === currentMonthStr) {
                 incomeMonth += totalUangTunai;
                 questsMonth += 1;
             }
 
-            if (completedAt >= startOfDay && completedAt <= endOfDay) {
+            if (completedAtStr === todayStr) {
                 incomeToday += totalUangTunai;
                 const distanceKm = (q.jarak_meter || 0) / 1000;
                 distanceTodayKm += distanceKm; 
