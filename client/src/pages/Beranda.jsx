@@ -7,6 +7,7 @@ import L from 'leaflet';
 import BottomNav from '../components/BottomNav';
 
 import { Capacitor } from '@capacitor/core';
+import { Motion } from '@capacitor/motion';
 import { getCurrentLocation } from '../utils/geolocationHelper';
 
 const customIcon = new L.DivIcon({
@@ -139,11 +140,10 @@ export default function Beranda() {
     useEffect(() => {
         let lastStepTime = 0;
         let isPeak = false;
+        let watchHandle = null;
 
-        const handleMotion = (event) => {
-            const acc = event.accelerationIncludingGravity;
+        const processAcceleration = (acc) => {
             if (!acc) return;
-
             const x = acc.x || 0;
             const y = acc.y || 0;
             const z = acc.z || 0;
@@ -155,7 +155,7 @@ export default function Beranda() {
             if (now - lastStepTime < 350) return;
 
             // Hentakan ayunan langkah (gaya gravitasi normal bumi ~9.8 m/s^2)
-            if (magnitude > 12.5 && !isPeak) {
+            if (magnitude > 12.0 && !isPeak) {
                 isPeak = true;
             }
 
@@ -180,8 +180,35 @@ export default function Beranda() {
             }
         };
 
-        window.addEventListener('devicemotion', handleMotion);
-        return () => window.removeEventListener('devicemotion', handleMotion);
+        const startMotionListener = async () => {
+            if (Capacitor.isNativePlatform()) {
+                try {
+                    // Gunakan native plugin Capacitor Motion untuk bypass secure context restriction
+                    watchHandle = await Motion.addListener('accel', (event) => {
+                        processAcceleration(event.accelerationIncludingGravity);
+                    });
+                } catch (err) {
+                    console.error("Gagal memulai sensor motion native:", err);
+                }
+            } else {
+                // Fallback untuk browser web biasa
+                const handleWebMotion = (event) => {
+                    processAcceleration(event.accelerationIncludingGravity);
+                };
+                window.addEventListener('devicemotion', handleWebMotion);
+                watchHandle = {
+                    remove: () => window.removeEventListener('devicemotion', handleWebMotion)
+                };
+            }
+        };
+
+        startMotionListener();
+
+        return () => {
+            if (watchHandle && typeof watchHandle.remove === 'function') {
+                watchHandle.remove();
+            }
+        };
     }, []);
 
     const handleActivateGPS = () => {
