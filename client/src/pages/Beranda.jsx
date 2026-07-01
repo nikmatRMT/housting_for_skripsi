@@ -2,8 +2,23 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import BottomNav from '../components/BottomNav';
+
+function MapResizeHandler({ center }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!center) return;
+        map.invalidateSize();
+        map.setView(center, 16);
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+            map.setView(center, 16);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [map, center]);
+    return null;
+}
 
 export default function Beranda() {
     const navigate = useNavigate();
@@ -360,6 +375,7 @@ export default function Beranda() {
                                 boxZoom={false}
                                 keyboard={false}
                             >
+                                <MapResizeHandler center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
                                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                                 <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
                             </MapContainer>
