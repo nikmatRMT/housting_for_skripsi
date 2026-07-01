@@ -1,9 +1,5 @@
 {
   "appId": "com.jasawarga.app",
   "appName": "Jasa Warga",
-  "webDir": "dist",
-  "server": {
-    "url": "https://192.168.1.9:5173",
-    "cleartext": true
-  }
+  "webDir": "dist"
 }
