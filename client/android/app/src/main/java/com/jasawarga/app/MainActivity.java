@@ -6,8 +6,8 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        // Daftarkan plugin QuestPolling ke Capacitor Bridge setelah super.onCreate
+        // Daftarkan plugin QuestPolling ke Capacitor Bridge sebelum super.onCreate (Sesuai dokumentasi resmi Capacitor)
         registerPlugin(QuestPollingPlugin.class);
+        super.onCreate(savedInstanceState);
     }
 }
