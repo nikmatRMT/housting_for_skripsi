@@ -1,6 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
+let foregroundServiceStarted = false;
+
 export async function requestNotificationPermission() {
     if (Capacitor.isNativePlatform()) {
         try {
@@ -15,6 +17,39 @@ export async function requestNotificationPermission() {
         if ('Notification' in window && Notification.permission === 'default') {
             await Notification.requestPermission();
         }
+    }
+}
+
+export async function startBackgroundService() {
+    if (!Capacitor.isNativePlatform() || foregroundServiceStarted) return;
+    
+    try {
+        const { ForegroundService } = await import('@capawesome-team/capacitor-android-foreground-service');
+        
+        await ForegroundService.startForegroundService({
+            id: 1001,
+            title: 'Jasa Warga Aktif',
+            body: 'Memantau tugas baru di sekitar Anda...',
+            smallIcon: 'ic_stat_name',
+        });
+        
+        foregroundServiceStarted = true;
+        console.log("Foreground Service berhasil dimulai!");
+    } catch (e) {
+        console.error("Gagal memulai Foreground Service:", e);
+    }
+}
+
+export async function stopBackgroundService() {
+    if (!Capacitor.isNativePlatform() || !foregroundServiceStarted) return;
+    
+    try {
+        const { ForegroundService } = await import('@capawesome-team/capacitor-android-foreground-service');
+        await ForegroundService.stopForegroundService();
+        foregroundServiceStarted = false;
+        console.log("Foreground Service dihentikan.");
+    } catch (e) {
+        console.error("Gagal menghentikan Foreground Service:", e);
     }
 }
 
