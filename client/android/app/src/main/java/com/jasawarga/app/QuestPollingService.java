@@ -62,7 +62,7 @@ public class QuestPollingService extends Service {
         try {
             Notification foregroundNotification = buildForegroundNotification("Menyiapkan pemantauan tugas...");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
             }
@@ -127,7 +127,7 @@ public class QuestPollingService extends Service {
         try {
             Notification foregroundNotification = buildForegroundNotification("Memantau tugas baru di sekitar Anda...");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
             }
