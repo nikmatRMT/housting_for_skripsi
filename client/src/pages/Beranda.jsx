@@ -10,7 +10,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { Motion } from '@capacitor/motion';
 import { getCurrentLocation } from '../utils/geolocationHelper';
-import { requestNotificationPermission, showNotification, startNativePollingService, updateNativeServiceLocation } from '../utils/notificationHelper';
+import { requestNotificationPermission, showNotification, startNativePollingService, updateNativeServiceLocation, checkBatteryOptimizations, requestIgnoreBatteryOptimizations } from '../utils/notificationHelper';
 
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--accent-coral, #f87171);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
@@ -53,6 +53,7 @@ export default function Beranda() {
     });
     const [locationError, setLocationError] = useState(false);
     const [transportMode, setTransportMode] = useState('walk');
+    const [isBatteryOptimized, setIsBatteryOptimized] = useState(false);
 
     // State sensor langkah lokal
     const [sensorSteps, setSensorSteps] = useState(0);
@@ -66,6 +67,14 @@ export default function Beranda() {
         return now.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
     };
 
+    const handleBypassBattery = async () => {
+        await requestIgnoreBatteryOptimizations();
+        setTimeout(async () => {
+            const isIgnoring = await checkBatteryOptimizations();
+            setIsBatteryOptimized(!isIgnoring);
+        }, 3000);
+    };
+
     useEffect(() => {
         if (!isGuest) {
             axios.get(`/api/quests/my-stats?user_id=${MY_USER_ID}`)
@@ -77,13 +86,20 @@ export default function Beranda() {
                 .catch(err => console.error("Gagal load stats:", err));
         }
 
+        // Cek apakah aplikasi dibatasi optimasi baterainya (untuk Android native)
+        if (isNativePlatform) {
+            checkBatteryOptimizations().then(isIgnoring => {
+                setIsBatteryOptimized(!isIgnoring);
+            });
+        }
+
         // Muat data sensor lokal hari ini
         const todayStr = getTodayKey();
         const storedSteps = parseInt(localStorage.getItem(`steps_${todayStr}`)) || 0;
         const storedCalories = parseFloat(localStorage.getItem(`calories_${todayStr}`)) || 0;
         setSensorSteps(storedSteps);
         setSensorCalories(storedCalories);
-    }, [isGuest, MY_USER_ID]);
+    }, [isGuest, MY_USER_ID, isNativePlatform]);
 
     const fetchQuests = useCallback(async (lat, lng, radius) => {
         try {
@@ -465,6 +481,51 @@ export default function Beranda() {
                                     <li>Segarkan (refresh) halaman ini untuk memuat ulang lokasi Anda.</li>
                                 </ol>
                             )}
+                        </div>
+                    )}
+
+                    {/* Banner Peringatan Optimasi Baterai (DuraSpeed/Freezing) */}
+                    {isBatteryOptimized && (
+                        <div className="warning-box" style={{
+                            marginBottom: '16px',
+                            padding: '16px',
+                            backgroundColor: 'rgba(251, 191, 36, 0.15)',
+                            border: '2px solid var(--accent-yellow, #f59e0b)',
+                            color: 'var(--text-main)',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            lineHeight: '1.5'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 'bold', color: 'var(--accent-yellow, #d97706)' }}>
+                                <span>⚡ Pembekuan Aplikasi Latar Belakang Terdeteksi</span>
+                            </div>
+                            <p style={{ marginBottom: '8px' }}>
+                                Sistem HP Anda membatasi aplikasi di latar belakang. Notifikasi tugas baru tidak akan muncul jika aplikasi di-minimize kecuali optimasi baterai dinonaktifkan.
+                            </p>
+                            <p style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '4px' }}>
+                                Langkah Mengatasi (Sangat Direkomendasikan):
+                            </p>
+                            <ol style={{ paddingLeft: '20px', margin: '0 0 12px 0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <li>Ketuk tombol <strong>Bypass Optimasi</strong> di bawah, cari <strong>Jasa Warga</strong>, lalu ubah ke <strong>"Jangan Dioptimalkan" (Don't Optimize)</strong>.</li>
+                                <li>Untuk HP Infinix: Buka <strong>Pengaturan HP &gt; DuraSpeed</strong>, dan aktifkan toggle untuk <strong>Jasa Warga</strong> agar tidak dibekukan.</li>
+                            </ol>
+                            <button
+                                onClick={handleBypassBattery}
+                                className="btn btn-primary"
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 16px',
+                                    fontWeight: 'bold',
+                                    border: '2px solid var(--border-ink)',
+                                    background: 'var(--accent-yellow, #fbbf24)',
+                                    color: 'var(--border-ink)',
+                                    boxShadow: '3px 3px 0 var(--border-ink)',
+                                    cursor: 'pointer',
+                                    borderRadius: '4px'
+                                }}
+                            >
+                                🔋 Bypass Optimasi Baterai
+                            </button>
                         </div>
                     )}
 

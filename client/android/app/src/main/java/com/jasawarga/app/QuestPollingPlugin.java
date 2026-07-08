@@ -81,4 +81,38 @@ public class QuestPollingPlugin extends Plugin {
         ret.put("updated", true);
         call.resolve(ret);
     }
+
+    @PluginMethod()
+    public void checkBatteryOptimizations(PluginCall call) {
+        android.os.PowerManager pm = (android.os.PowerManager) getContext().getSystemService(android.content.Context.POWER_SERVICE);
+        boolean isIgnoring = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && pm != null) {
+            isIgnoring = pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
+        }
+        JSObject ret = new JSObject();
+        ret.put("isIgnoring", isIgnoring);
+        call.resolve(ret);
+    }
+
+    @PluginMethod()
+    public void requestIgnoreBatteryOptimizations(PluginCall call) {
+        android.os.PowerManager pm = (android.os.PowerManager) getContext().getSystemService(android.content.Context.POWER_SERVICE);
+        boolean isIgnoring = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && pm != null) {
+            isIgnoring = pm.isIgnoringBatteryOptimizations(getContext().getPackageName());
+            if (!isIgnoring) {
+                try {
+                    Intent intent = new Intent();
+                    intent.setAction(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(intent);
+                } catch (Exception e) {
+                    Log.e(TAG, "Gagal membuka pengaturan baterai: " + e.getMessage());
+                }
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("isIgnoring", isIgnoring);
+        call.resolve(ret);
+    }
 }

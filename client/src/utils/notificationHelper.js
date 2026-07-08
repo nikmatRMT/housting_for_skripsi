@@ -106,3 +106,23 @@ export async function showNotification(title, body) {
         }
     }
 }
+
+export async function checkBatteryOptimizations() {
+    if (!Capacitor.isNativePlatform() || !QuestPolling) return true;
+    try {
+        const res = await QuestPolling.checkBatteryOptimizations();
+        return res.isIgnoring;
+    } catch (e) {
+        console.error("Gagal cek optimasi baterai:", e);
+        return true;
+    }
+}
+
+export async function requestIgnoreBatteryOptimizations() {
+    if (!Capacitor.isNativePlatform() || !QuestPolling) return;
+    try {
+        await QuestPolling.requestIgnoreBatteryOptimizations();
+    } catch (e) {
+        console.error("Gagal meminta bypass optimasi baterai:", e);
+    }
+}
