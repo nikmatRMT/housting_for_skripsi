@@ -1,7 +1,12 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
-let foregroundServiceStarted = false;
+// Register plugin native QuestPolling
+const QuestPolling = Capacitor.isNativePlatform() 
+    ? registerPlugin('QuestPolling') 
+    : null;
+
+let nativeServiceStarted = false;
 
 export async function requestNotificationPermission() {
     if (Capacitor.isNativePlatform()) {
@@ -20,36 +25,54 @@ export async function requestNotificationPermission() {
     }
 }
 
-export async function startBackgroundService() {
-    if (!Capacitor.isNativePlatform() || foregroundServiceStarted) return;
-    
+/**
+ * Memulai native Android Foreground Service untuk polling tugas baru.
+ * Service ini berjalan di JAVA (bukan JavaScript), sehingga tetap aktif
+ * meskipun aplikasi diminimalkan atau layar HP dikunci.
+ */
+export async function startNativePollingService(apiBaseUrl, userId, latitude, longitude, radius) {
+    if (!Capacitor.isNativePlatform() || !QuestPolling || nativeServiceStarted) return;
+
     try {
-        const { ForegroundService } = await import('@capawesome-team/capacitor-android-foreground-service');
-        
-        await ForegroundService.startForegroundService({
-            id: 1001,
-            title: 'Jasa Warga Aktif',
-            body: 'Memantau tugas baru di sekitar Anda...',
-            smallIcon: 'ic_stat_name',
+        await QuestPolling.startService({
+            apiBaseUrl: apiBaseUrl || '',
+            userId: userId || '',
+            latitude: latitude || -3.440,
+            longitude: longitude || 114.836,
+            radius: radius || 2000
         });
-        
-        foregroundServiceStarted = true;
-        console.log("Foreground Service berhasil dimulai!");
+        nativeServiceStarted = true;
+        console.log("Native QuestPollingService berhasil dimulai!");
     } catch (e) {
-        console.error("Gagal memulai Foreground Service:", e);
+        console.error("Gagal memulai native polling service:", e);
     }
 }
 
-export async function stopBackgroundService() {
-    if (!Capacitor.isNativePlatform() || !foregroundServiceStarted) return;
-    
+export async function stopNativePollingService() {
+    if (!Capacitor.isNativePlatform() || !QuestPolling || !nativeServiceStarted) return;
+
     try {
-        const { ForegroundService } = await import('@capawesome-team/capacitor-android-foreground-service');
-        await ForegroundService.stopForegroundService();
-        foregroundServiceStarted = false;
-        console.log("Foreground Service dihentikan.");
+        await QuestPolling.stopService();
+        nativeServiceStarted = false;
+        console.log("Native QuestPollingService dihentikan.");
     } catch (e) {
-        console.error("Gagal menghentikan Foreground Service:", e);
+        console.error("Gagal menghentikan native polling service:", e);
+    }
+}
+
+export async function updateNativeServiceLocation(apiBaseUrl, userId, latitude, longitude, radius) {
+    if (!Capacitor.isNativePlatform() || !QuestPolling) return;
+
+    try {
+        await QuestPolling.updateLocation({
+            apiBaseUrl: apiBaseUrl || '',
+            userId: userId || '',
+            latitude: latitude || -3.440,
+            longitude: longitude || 114.836,
+            radius: radius || 2000
+        });
+    } catch (e) {
+        console.error("Gagal memperbarui lokasi service:", e);
     }
 }
 

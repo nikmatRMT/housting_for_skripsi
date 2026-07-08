@@ -38,6 +38,11 @@
         <service
             android:name="io.capawesome.capacitorjs.plugins.foregroundservice.AndroidForegroundService"
             android:foregroundServiceType="location" />
+
+        <service
+            android:name=".QuestPollingService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
     <!-- Permissions -->

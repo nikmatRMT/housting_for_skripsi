@@ -9,7 +9,7 @@ import BottomNav from '../components/BottomNav';
 import { Capacitor } from '@capacitor/core';
 import { Motion } from '@capacitor/motion';
 import { getCurrentLocation } from '../utils/geolocationHelper';
-import { requestNotificationPermission, showNotification, startBackgroundService } from '../utils/notificationHelper';
+import { requestNotificationPermission, showNotification, startNativePollingService } from '../utils/notificationHelper';
 
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--accent-coral, #f87171);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
@@ -113,22 +113,25 @@ export default function Beranda() {
         }
     }, [searchRadius, MY_USER_ID]);
 
-    // Izin Notifikasi Browser / Native App + Foreground Service
+    // Izin Notifikasi Browser / Native App
     useEffect(() => {
-        const initNotifications = async () => {
-            await requestNotificationPermission();
-            await startBackgroundService();
-        };
-        initNotifications();
+        requestNotificationPermission();
     }, []);
 
-    // Jalankan pencarian tugas awal
+    // Jalankan pencarian tugas awal + mulai native polling service
     useEffect(() => {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || '';
+        
         getCurrentLocation(
             (pos) => {
                 setLocationError(false);
-                setLastLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-                fetchQuests(pos.coords.latitude, pos.coords.longitude, searchRadius);
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                setLastLoc({ lat, lng });
+                fetchQuests(lat, lng, searchRadius);
+                
+                // Mulai native Android service untuk polling di belakang layar
+                startNativePollingService(apiBaseUrl, MY_USER_ID, lat, lng, searchRadius);
             },
             (err) => {
                 console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
@@ -139,6 +142,9 @@ export default function Beranda() {
                 setLocationError(true);
                 setLastLoc({ lat: -3.440, lng: 114.836 });
                 fetchQuests(-3.440, 114.836, searchRadius);
+                
+                // Mulai native service walaupun GPS gagal (pakai lokasi default)
+                startNativePollingService(apiBaseUrl, MY_USER_ID, -3.440, 114.836, searchRadius);
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
