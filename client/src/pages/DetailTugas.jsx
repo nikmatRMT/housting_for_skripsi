@@ -7,6 +7,7 @@ import axios from 'axios';
 import 'leaflet-routing-machine';
 import BottomNav from '../components/BottomNav';
 import { watchLocation, stopWatchLocation } from '../utils/geolocationHelper';
+import { showNotification } from '../utils/notificationHelper';
 
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--color-coral-pop, #ff705d);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
@@ -149,12 +150,10 @@ export default function DetailTugas() {
                         
                         // Notifikasi saat status berpindah dari OPEN ke TAKEN
                         if (quest.status === 'OPEN' && fetched.status === 'TAKEN') {
-                            if ('Notification' in window && Notification.permission === 'granted') {
-                                new Notification("Tugas Anda Diambil! 🏃", {
-                                    body: `${fetched.pekerja_id?.nama_lengkap || 'Pekerja'} telah mengambil tugas Anda dan sedang menuju ke lokasi.`,
-                                    icon: '/logo.svg'
-                                });
-                            }
+                            showNotification(
+                                "Tugas Anda Diambil! 🏃",
+                                `${fetched.pekerja_id?.nama_lengkap || 'Pekerja'} telah mengambil tugas Anda dan sedang menuju ke lokasi.`
+                            );
                             toast.success("Tugas Anda telah diambil oleh Pekerja!");
                         }
                         

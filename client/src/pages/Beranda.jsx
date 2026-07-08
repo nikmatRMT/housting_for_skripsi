@@ -9,6 +9,7 @@ import BottomNav from '../components/BottomNav';
 import { Capacitor } from '@capacitor/core';
 import { Motion } from '@capacitor/motion';
 import { getCurrentLocation } from '../utils/geolocationHelper';
+import { requestNotificationPermission, showNotification } from '../utils/notificationHelper';
 
 const customIcon = new L.DivIcon({
     html: `<div style="color: var(--accent-coral, #f87171);"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
@@ -90,15 +91,15 @@ export default function Beranda() {
                 const newQuests = res.data.data;
                 
                 // Pemicu Notifikasi jika ada tugas baru
-                if ('Notification' in window && Notification.permission === 'granted' && prevQuestsRef.current !== null) {
+                if (prevQuestsRef.current !== null) {
                     const oldIds = new Set(prevQuestsRef.current.map(q => q._id));
                     newQuests.forEach(q => {
                         const makerId = typeof q.pembuat_id === 'object' ? q.pembuat_id?._id : q.pembuat_id;
                         if (!oldIds.has(q._id) && q.status === 'OPEN' && makerId !== MY_USER_ID) {
-                            new Notification("Ada Tugas Baru di Sekitar! 📍", {
-                                body: `${q.deskripsi.substring(0, 50)}... (Upah: Rp ${q.upah_jasa.toLocaleString('id-ID')})`,
-                                icon: '/logo.svg'
-                            });
+                            showNotification(
+                                "Ada Tugas Baru di Sekitar! 📍",
+                                `${q.deskripsi.substring(0, 50)}... (Upah: Rp ${q.upah_jasa.toLocaleString('id-ID')})`
+                            );
                         }
                     });
                 }
@@ -112,11 +113,9 @@ export default function Beranda() {
         }
     }, [searchRadius, MY_USER_ID]);
 
-    // Izin Notifikasi Browser
+    // Izin Notifikasi Browser / Native App
     useEffect(() => {
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
+        requestNotificationPermission();
     }, []);
 
     // Jalankan pencarian tugas awal
