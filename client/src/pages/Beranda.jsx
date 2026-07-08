@@ -144,13 +144,46 @@ export default function Beranda() {
         );
     }, [fetchQuests, searchRadius]);
 
-    // Polling periodik 15 detik untuk update data tugas & memicu notifikasi
+    // Polling periodik 10 detik untuk update data tugas & memicu notifikasi
     useEffect(() => {
         if (!lastLoc) return;
         const pollInterval = setInterval(() => {
             fetchQuests(lastLoc.lat, lastLoc.lng, searchRadius);
-        }, 15000);
+        }, 10000);
         return () => clearInterval(pollInterval);
+    }, [lastLoc, searchRadius, fetchQuests]);
+
+    // Resume Check: Saat kembali dari minimize, langsung cek tugas baru
+    useEffect(() => {
+        const handleResume = () => {
+            if (document.visibilityState === 'visible' && lastLoc) {
+                console.log("App resumed! Checking for new quests...");
+                fetchQuests(lastLoc.lat, lastLoc.lng, searchRadius);
+            }
+        };
+        document.addEventListener('visibilitychange', handleResume);
+
+        // Capacitor App state change (native)
+        let appListener = null;
+        const setupAppListener = async () => {
+            try {
+                const { App } = await import('@capacitor/app');
+                appListener = await App.addListener('appStateChange', (state) => {
+                    if (state.isActive && lastLoc) {
+                        console.log("Native app resumed! Checking for new quests...");
+                        fetchQuests(lastLoc.lat, lastLoc.lng, searchRadius);
+                    }
+                });
+            } catch (e) {
+                console.log("App listener not available:", e);
+            }
+        };
+        setupAppListener();
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleResume);
+            if (appListener) appListener.remove();
+        };
     }, [lastLoc, searchRadius, fetchQuests]);
 
     // Deteksi perubahan status GPS (aktif/nonaktif) secara berkala di latar belakang setiap 5 detik
