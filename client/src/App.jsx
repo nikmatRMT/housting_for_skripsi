@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import axios from 'axios';
+import { syncStorageToLocalStorage } from './utils/storageHelper';
 import LandingLogin from './pages/LandingLogin';
 import LengkapiProfil from './pages/LengkapiProfil';
 import Beranda from './pages/Beranda';
@@ -217,6 +218,38 @@ function AppRoutes() {
 }
 
 function App() {
+  const [isSynced, setIsSynced] = useState(false);
+
+  useEffect(() => {
+    const initStorage = async () => {
+      await syncStorageToLocalStorage();
+      const token = localStorage.getItem('token');
+      if (token) {
+        axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+      }
+      setIsSynced(true);
+    };
+    initStorage();
+  }, []);
+
+  if (!isSynced) {
+    return (
+      <div style={{
+        display: 'flex',
+        minHeight: '100vh',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'var(--color-sandstone, #f7f4ed)',
+        fontFamily: 'var(--font-outfit, sans-serif)'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '3rem', animation: 'bounce 1s infinite', marginBottom: '16px' }}>🏃</div>
+          <div style={{ fontWeight: '700', color: 'var(--color-ink-black)' }}>Memuat Sesi Aman...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <AppRoutes />

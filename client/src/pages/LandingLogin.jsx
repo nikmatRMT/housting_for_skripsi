@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
+import { saveStorageItem, removeStorageItem } from '../utils/storageHelper';
 
 export default function LandingLogin() {
     const navigate = useNavigate();
@@ -38,16 +39,16 @@ export default function LandingLogin() {
             const res = await axios.post('/api/auth/login', { email, password });
             if (res.data.success) {
                 // Hapus mode tamu dan dummy
-                localStorage.removeItem('guestMode');
-                localStorage.removeItem('dummyUserId');
+                await removeStorageItem('guestMode');
+                await removeStorageItem('dummyUserId');
 
                 // Simpan email terakhir untuk mempermudah login berikutnya
-                localStorage.setItem('rememberedEmail', email);
+                await saveStorageItem('rememberedEmail', email);
 
                 // Simpan token dan data user asli
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('myUserId', res.data.user.id);
-                localStorage.setItem('userRole', res.data.user.role);
+                await saveStorageItem('token', res.data.token);
+                await saveStorageItem('myUserId', res.data.user.id);
+                await saveStorageItem('userRole', res.data.user.role);
 
                 // Set default authorization header untuk request selanjutnya
                 axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
@@ -66,8 +67,8 @@ export default function LandingLogin() {
         }
     };
 
-    const handleGuest = () => {
-        localStorage.setItem('guestMode', 'true');
+    const handleGuest = async () => {
+        await saveStorageItem('guestMode', 'true');
         navigate('/beranda');
     };
 
