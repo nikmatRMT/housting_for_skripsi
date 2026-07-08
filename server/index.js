@@ -50,6 +50,38 @@ app.get('/', (req, res) => {
     res.send('Server Aplikasi Pencarian Jasa Lepas Berjalan');
 });
 
+const AppLog = require('./models/AppLog');
+
+// Endpoint untuk Pelaporan Log Error Aplikasi (Diagnostics)
+app.post('/api/logs/report', async (req, res) => {
+    try {
+        const { level, message, stack, platform, userId, deviceInfo } = req.body;
+        const newLog = new AppLog({
+            level: level || 'ERROR',
+            message: message || 'No message provided',
+            stack: stack || '',
+            platform: platform || 'web',
+            userId: userId || '',
+            deviceInfo: deviceInfo || {}
+        });
+        await newLog.save();
+        res.status(200).json({ success: true, message: 'Log reported successfully' });
+    } catch (err) {
+        console.error('Failed to save reported log:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Endpoint untuk Mendapatkan Log Error Terbaru (untuk Admin/Developer)
+app.get('/api/logs', async (req, res) => {
+    try {
+        const logs = await AppLog.find().sort({ timestamp: -1 }).limit(100);
+        res.status(200).json({ success: true, data: logs });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 const Quest = require('./models/Quest');
 
 // Endpoint untuk Vercel Cron Job (Sweeper)

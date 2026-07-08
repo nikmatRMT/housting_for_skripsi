@@ -5,7 +5,11 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import axios from 'axios';
 import { syncStorageToLocalStorage } from './utils/storageHelper';
+import { initErrorReporter } from './utils/errorReporter';
 import LandingLogin from './pages/LandingLogin';
+
+// Inisialisasi pelaporan error remote secara langsung
+initErrorReporter();
 import LengkapiProfil from './pages/LengkapiProfil';
 import Beranda from './pages/Beranda';
 import BuatTugas from './pages/BuatTugas';

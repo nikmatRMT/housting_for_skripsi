@@ -69,6 +69,7 @@ public class QuestPollingService extends Service {
             Log.d(TAG, "Foreground mode activated in onCreate()");
         } catch (Exception e) {
             Log.e(TAG, "Gagal mengaktifkan foreground di onCreate(): " + e.getMessage(), e);
+            reportJavaErrorToBackend("Gagal mengaktifkan foreground di onCreate", e);
         }
 
         PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -79,6 +80,7 @@ public class QuestPollingService extends Service {
                 Log.d(TAG, "WakeLock acquired with timeout: " + WAKELOCK_TIMEOUT_MS);
             } catch (Exception e) {
                 Log.e(TAG, "Gagal acquire WakeLock: " + e.getMessage(), e);
+                reportJavaErrorToBackend("Gagal acquire WakeLock", e);
             }
         }
 
@@ -131,6 +133,7 @@ public class QuestPollingService extends Service {
             }
         } catch (Exception e) {
             Log.e(TAG, "Gagal refresh foreground notification: " + e.getMessage(), e);
+            reportJavaErrorToBackend("Gagal refresh foreground notification", e);
         }
 
         // Mulai polling
@@ -194,6 +197,7 @@ public class QuestPollingService extends Service {
                     pollForNewQuests();
                 } catch (Exception e) {
                     Log.e(TAG, "Error in scheduled polling: " + e.getMessage(), e);
+                    reportJavaErrorToBackend("Error in scheduled polling", e);
                 }
             }
         }, 0, POLL_INTERVAL_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
@@ -300,6 +304,7 @@ public class QuestPollingService extends Service {
             conn.disconnect();
         } catch (Exception e) {
             Log.e(TAG, "Polling error: " + e.getMessage(), e);
+            reportJavaErrorToBackend("Polling HTTP request error", e);
         }
     }
 
@@ -341,12 +346,64 @@ public class QuestPollingService extends Service {
             Log.d(TAG, "manager.notify() success. notificationId=" + notificationId + ", title=" + title);
         } else {
             Log.e(TAG, "NotificationManager null, notification gagal dikirim.");
+            reportJavaErrorToBackend("NotificationManager null saat mengirim notifikasi tugas", null);
         }
     }
 
     public void updateLocation(double lat, double lng) {
         this.latitude = lat;
         this.longitude = lng;
+    }
+
+    private void reportJavaErrorToBackend(String message, Throwable throwable) {
+        if (apiBaseUrl == null || apiBaseUrl.isEmpty()) return;
+        
+        new Thread(() -> {
+            try {
+                URL url = new URL(apiBaseUrl + "/api/logs/report");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(5000);
+
+                String stackTrace = "";
+                if (throwable != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (StackTraceElement element : throwable.getStackTrace()) {
+                        sb.append(element.toString()).append("\n");
+                    }
+                    stackTrace = sb.toString();
+                }
+
+                JSONObject jsonParam = new JSONObject();
+                jsonParam.put("level", "ERROR");
+                jsonParam.put("message", "Java Background Service: " + message);
+                jsonParam.put("stack", stackTrace);
+                jsonParam.put("platform", "android_service");
+                jsonParam.put("userId", userId);
+                
+                JSONObject deviceInfo = new JSONObject();
+                deviceInfo.put("model", Build.MODEL);
+                deviceInfo.put("brand", Build.BRAND);
+                deviceInfo.put("androidVersion", Build.VERSION.RELEASE);
+                deviceInfo.put("sdkVersion", Build.VERSION.SDK_INT);
+                jsonParam.put("deviceInfo", deviceInfo);
+
+                try (java.io.OutputStream os = conn.getOutputStream()) {
+                    byte[] input = jsonParam.toString().getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+
+                int code = conn.getResponseCode();
+                Log.d(TAG, "Reported Java error to backend. Response code: " + code);
+                conn.disconnect();
+            } catch (Exception e) {
+                Log.e(TAG, "Gagal mengirim remote error dari Java: " + e.getMessage());
+            }
+        }).start();
     }
 
     @Override
