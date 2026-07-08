@@ -1,5 +1,6 @@
 package com.jasawarga.app;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -7,13 +8,18 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.core.app.ServiceCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -32,9 +38,11 @@ public class QuestPollingService extends Service {
     private static final String CHANNEL_ID_QUEST = "jasa_warga_quest";
     private static final int FOREGROUND_NOTIFICATION_ID = 1001;
     private static final long POLL_INTERVAL_MS = 10000; // 10 detik
+    private static final long WAKELOCK_TIMEOUT_MS = 10 * 60 * 1000L;
+    private static final String PREFS_NAME = "QuestPollingPrefs";
+    private static final String PREF_KNOWN_IDS = "knownQuestIds";
 
-    private Handler handler;
-    private Runnable pollRunnable;
+    private java.util.concurrent.ScheduledExecutorService scheduler;
     private Set<String> knownQuestIds = new HashSet<>();
     private boolean isFirstPoll = true;
     private String apiBaseUrl = "";
@@ -43,17 +51,48 @@ public class QuestPollingService extends Service {
     private double longitude = 114.836;
     private int radius = 2000;
     private int questNotificationCounter = 2000;
+    private PowerManager.WakeLock wakeLock;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate() called");
         createNotificationChannels();
-        handler = new Handler(Looper.getMainLooper());
+
+        try {
+            Notification foregroundNotification = buildForegroundNotification("Menyiapkan pemantauan tugas...");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
+            }
+            Log.d(TAG, "Foreground mode activated in onCreate()");
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal mengaktifkan foreground di onCreate(): " + e.getMessage(), e);
+        }
+
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        if (powerManager != null) {
+            wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "JasaWarga::PollingWakeLock");
+            try {
+                wakeLock.acquire(WAKELOCK_TIMEOUT_MS);
+                Log.d(TAG, "WakeLock acquired with timeout: " + WAKELOCK_TIMEOUT_MS);
+            } catch (Exception e) {
+                Log.e(TAG, "Gagal acquire WakeLock: " + e.getMessage(), e);
+            }
+        }
+
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        knownQuestIds = new HashSet<>(prefs.getStringSet(PREF_KNOWN_IDS, new HashSet<>()));
+        isFirstPoll = knownQuestIds.isEmpty();
+        Log.d(TAG, "Known quest IDs restored: " + knownQuestIds.size() + ", isFirstPoll=" + isFirstPoll);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        
+        if (intent != null && intent.hasExtra("apiBaseUrl")) {
             apiBaseUrl = intent.getStringExtra("apiBaseUrl");
             userId = intent.getStringExtra("userId");
             latitude = intent.getDoubleExtra("latitude", -3.440);
@@ -62,13 +101,37 @@ public class QuestPollingService extends Service {
             
             if (apiBaseUrl == null) apiBaseUrl = "";
             if (userId == null) userId = "";
+            
+            // Simpan ke preferensi untuk berjaga-jaga jika service direstart oleh sistem
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString("apiBaseUrl", apiBaseUrl);
+            editor.putString("userId", userId);
+            editor.putFloat("latitude", (float) latitude);
+            editor.putFloat("longitude", (float) longitude);
+            editor.putInt("radius", radius);
+            editor.apply();
+        } else {
+            // Restore jika direstart
+            apiBaseUrl = prefs.getString("apiBaseUrl", "");
+            userId = prefs.getString("userId", "");
+            latitude = prefs.getFloat("latitude", -3.440f);
+            longitude = prefs.getFloat("longitude", 114.836f);
+            radius = prefs.getInt("radius", 2000);
         }
 
-        Log.d(TAG, "Service started. API: " + apiBaseUrl + ", User: " + userId + ", Lat: " + latitude + ", Lng: " + longitude);
+        Log.d(TAG, "Service started. API: " + apiBaseUrl + ", User: " + userId + ", Lat: " + latitude + ", Lng: " + longitude + ", Radius: " + radius);
 
-        // Mulai sebagai Foreground Service
-        Notification foregroundNotification = buildForegroundNotification();
-        startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
+        // Perbarui foreground notification agar mencerminkan state aktif
+        try {
+            Notification foregroundNotification = buildForegroundNotification("Memantau tugas baru di sekitar Anda...");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal refresh foreground notification: " + e.getMessage(), e);
+        }
 
         // Mulai polling
         startPolling();
@@ -103,7 +166,7 @@ public class QuestPollingService extends Service {
         }
     }
 
-    private Notification buildForegroundNotification() {
+    private Notification buildForegroundNotification(String contentText) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE
@@ -111,27 +174,38 @@ public class QuestPollingService extends Service {
 
         return new NotificationCompat.Builder(this, CHANNEL_ID_FOREGROUND)
             .setContentTitle("Jasa Warga Aktif")
-            .setContentText("Memantau tugas baru di sekitar Anda...")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentText(contentText)
+            .setSmallIcon(getApplicationInfo().icon)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .build();
     }
 
     private void startPolling() {
-        if (pollRunnable != null) {
-            handler.removeCallbacks(pollRunnable);
-        }
+        stopPolling();
 
-        pollRunnable = new Runnable() {
+        scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                new Thread(() -> pollForNewQuests()).start();
-                handler.postDelayed(this, POLL_INTERVAL_MS);
+                try {
+                    Log.d(TAG, "Polling tick (background thread)...");
+                    pollForNewQuests();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error in scheduled polling: " + e.getMessage(), e);
+                }
             }
-        };
+        }, 0, POLL_INTERVAL_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+        Log.d(TAG, "ScheduledExecutorService started with interval: " + POLL_INTERVAL_MS + " ms");
+    }
 
-        handler.post(pollRunnable);
+    private void stopPolling() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            scheduler = null;
+            Log.d(TAG, "Polling scheduler stopped");
+        }
     }
 
     private void pollForNewQuests() {
@@ -180,26 +254,44 @@ public class QuestPollingService extends Service {
                             makerId = (String) pembuat;
                         }
 
-                        // Tampilkan notifikasi hanya untuk tugas baru yang bukan milik sendiri
-                        if (!isFirstPoll && !knownQuestIds.contains(questId) 
-                                && "OPEN".equals(status) && !userId.equals(makerId)) {
-                            
+                        boolean isOpen = "OPEN".equals(status);
+                        boolean isOwnQuest = userId.equals(makerId);
+                        boolean isNewQuest = !knownQuestIds.contains(questId);
+                        
+                        // NOTIFIKASI: Hanya jika bukan tick pertama (isFirstPoll = false), bukan quest buatan sendiri, dan status OPEN
+                        boolean shouldNotify = !isFirstPoll && isNewQuest && !isOwnQuest && isOpen;
+
+                        Log.d(TAG, "Quest check -> id=" + questId
+                                + ", status=" + status
+                                + ", makerId=" + makerId
+                                + ", isOwnQuest=" + isOwnQuest
+                                + ", isNewQuest=" + isNewQuest
+                                + ", isFirstPoll=" + isFirstPoll
+                                + ", shouldNotify=" + shouldNotify);
+
+                        if (shouldNotify) {
                             String deskripsi = quest.optString("deskripsi", "Tugas baru");
                             double upah = quest.optDouble("upah_jasa", 0);
                             String upahStr = String.format("Rp %,.0f", upah).replace(",", ".");
-                            
+
                             String body = deskripsi;
                             if (body.length() > 50) body = body.substring(0, 50) + "...";
                             body += " (Upah: " + upahStr + ")";
 
-                            showQuestNotification("Ada Tugas Baru di Sekitar! 📍", body);
-                            Log.d(TAG, "NOTIFIKASI TERKIRIM: " + questId);
+                            String title = "Ada Tugas Baru di Sekitar! 📍";
+
+                            showQuestNotification(title, body);
+                            Log.d(TAG, "NOTIFIKASI DIKIRIM untuk questId=" + questId);
                         }
                     }
 
                     knownQuestIds = currentIds;
                     isFirstPoll = false;
-                    Log.d(TAG, "Poll selesai. Jumlah quest: " + quests.length());
+                    getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                        .edit()
+                        .putStringSet(PREF_KNOWN_IDS, new HashSet<>(knownQuestIds))
+                        .apply();
+                    Log.d(TAG, "Poll selesai. Jumlah quest: " + quests.length() + ", knownQuestIds saved: " + knownQuestIds.size());
                 }
             } else {
                 Log.w(TAG, "HTTP response code: " + responseCode);
@@ -207,11 +299,22 @@ public class QuestPollingService extends Service {
 
             conn.disconnect();
         } catch (Exception e) {
-            Log.e(TAG, "Polling error: " + e.getMessage());
+            Log.e(TAG, "Polling error: " + e.getMessage(), e);
         }
     }
 
     private void showQuestNotification(String title, String body) {
+        if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            Log.w(TAG, "Notifications disabled at system level. Skip notify.");
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            Log.w(TAG, "POST_NOTIFICATIONS permission not granted. Skip notify.");
+            return;
+        }
+
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
@@ -221,16 +324,24 @@ public class QuestPollingService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID_QUEST)
             .setContentTitle(title)
             .setContentText(body)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+            .setSmallIcon(getApplicationInfo().icon)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
-            .setDefaults(NotificationCompat.DEFAULT_ALL) // Suara + Getar + LED
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVibrate(new long[]{0, 300, 200, 300})
             .build();
 
         NotificationManager manager = getSystemService(NotificationManager.class);
-        manager.notify(questNotificationCounter++, notification);
+        if (manager != null) {
+            int notificationId = questNotificationCounter++;
+            manager.notify(notificationId, notification);
+            Log.d(TAG, "manager.notify() success. notificationId=" + notificationId + ", title=" + title);
+        } else {
+            Log.e(TAG, "NotificationManager null, notification gagal dikirim.");
+        }
     }
 
     public void updateLocation(double lat, double lng) {
@@ -246,9 +357,11 @@ public class QuestPollingService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (handler != null && pollRunnable != null) {
-            handler.removeCallbacks(pollRunnable);
+        Log.d(TAG, "onDestroy() called");
+        stopPolling();
+        if (wakeLock != null && wakeLock.isHeld()) {
+            wakeLock.release();
+            Log.d(TAG, "WakeLock released");
         }
-        Log.d(TAG, "Service destroyed.");
     }
 }

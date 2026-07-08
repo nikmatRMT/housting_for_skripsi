@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Logo from '../components/Logo';
@@ -11,6 +11,24 @@ export default function LandingLogin() {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // Cek sesi aktif saat pertama kali dibuka untuk auto-redirect
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const role = localStorage.getItem('userRole');
+        const guestMode = localStorage.getItem('guestMode') === 'true';
+
+        if (token) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            if (role === 'admin') {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/beranda', { replace: true });
+            }
+        } else if (guestMode) {
+            navigate('/beranda', { replace: true });
+        }
+    }, [navigate]);
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -22,7 +40,7 @@ export default function LandingLogin() {
                 // Hapus mode tamu dan dummy
                 localStorage.removeItem('guestMode');
                 localStorage.removeItem('dummyUserId');
-                
+
                 // Simpan email terakhir untuk mempermudah login berikutnya
                 localStorage.setItem('rememberedEmail', email);
 
@@ -30,10 +48,10 @@ export default function LandingLogin() {
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('myUserId', res.data.user.id);
                 localStorage.setItem('userRole', res.data.user.role);
-                
+
                 // Set default authorization header untuk request selanjutnya
                 axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
-                
+
                 // Arahkan berdasarkan role pengguna
                 if (res.data.user.role === 'admin') {
                     navigate('/admin');
@@ -55,13 +73,13 @@ export default function LandingLogin() {
 
     return (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '32px 24px', backgroundColor: 'var(--bg-main)' }}>
-            
+
             {/* Hero / Branding Area */}
             <div className="fade-up" style={{ marginTop: '6vh', textAlign: 'center' }}>
                 <div style={{ margin: '0 auto 20px', width: 'fit-content' }}>
                     <Logo size={64} />
                 </div>
-                
+
                 <h1 style={{ fontSize: 'clamp(2rem, 8vw, 2.8rem)', letterSpacing: '-0.04em', lineHeight: 1.05, marginBottom: '8px' }}>
                     Jasa Warga
                 </h1>
@@ -76,7 +94,7 @@ export default function LandingLogin() {
             {/* Login Form Card */}
             <div className="fade-up delay-2" style={{ marginTop: 'auto', marginBottom: '24px' }}>
                 <div className="clean-card" style={{ padding: '24px' }}>
-                    
+
                     {error && (
                         <div className="error-box" style={{ marginBottom: '16px' }}>
                             {error}
@@ -86,8 +104,8 @@ export default function LandingLogin() {
                     <form onSubmit={handleLogin}>
                         <div style={{ marginBottom: '16px' }}>
                             <label className="form-label">Email</label>
-                            <input 
-                                type="email" 
+                            <input
+                                type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -97,7 +115,7 @@ export default function LandingLogin() {
                             />
                             {email.length > 0 && !email.includes('@') && (
                                 <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '8px' }}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
                                     <span>Format email salah! Harap sertakan simbol '@' (contoh: nama@email.com).</span>
                                 </div>
                             )}
@@ -106,8 +124,8 @@ export default function LandingLogin() {
                         <div style={{ marginBottom: '24px' }}>
                             <label className="form-label">Kata Sandi</label>
                             <div style={{ position: 'relative' }}>
-                                <input 
-                                    type={showPassword ? 'text' : 'password'} 
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -143,27 +161,27 @@ export default function LandingLogin() {
                             </div>
                             {password.length > 0 && password.length < 6 && (
                                 <div className="speech-bubble" style={{ color: '#EF4444', display: 'flex', alignItems: 'flex-start', gap: '8px', marginTop: '8px' }}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '1px' }}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
                                     <span>Kata sandi terlalu pendek! Minimal adalah 6 karakter.</span>
                                 </div>
                             )}
                         </div>
 
-                        <button 
-                            type="submit" 
-                            className="btn btn-primary" 
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
                             disabled={isLoading}
                             id="login-submit"
                         >
                             {isLoading ? 'Memproses...' : 'MASUK'}
                         </button>
                     </form>
-                    
+
                     <div style={{ marginTop: '20px', textAlign: 'center' }}>
                         <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
                             Belum punya akun?{' '}
-                            <span 
-                                onClick={() => navigate('/register')} 
+                            <span
+                                onClick={() => navigate('/register')}
                                 style={{ color: 'var(--accent-green)', fontWeight: '700', cursor: 'pointer', borderBottom: '2px solid var(--accent-green)' }}
                             >
                                 Daftar Sekarang
@@ -172,21 +190,21 @@ export default function LandingLogin() {
                     </div>
 
                     <hr className="divider-mist" style={{ margin: '20px 0' }} />
-                    
-                    <button 
-                        className="btn btn-outline" 
+
+                    <button
+                        className="btn btn-outline"
                         onClick={handleGuest}
                         id="login-guest"
                     >
                         Masuk sebagai Tamu (Lihat-lihat dulu)
                     </button>
-                    
+
                 </div>
             </div>
 
             {/* Footer accent */}
-            <div style={{ 
-                backgroundColor: 'var(--accent-yellow)', 
+            <div style={{
+                backgroundColor: 'var(--accent-yellow)',
                 margin: '0 -24px -32px',
                 padding: '14px 24px',
                 textAlign: 'center',
@@ -196,7 +214,7 @@ export default function LandingLogin() {
                     Aplikasi Skripsi — Layanan Jasa Berbasis Proximity
                 </p>
             </div>
-            
+
         </div>
     );
 }

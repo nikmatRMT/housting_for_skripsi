@@ -126,7 +126,7 @@ export default function DetailTugas() {
 
     useEffect(() => {
         let watchIdPromise;
-        if (quest && !isKlien) {
+        if (quest && !isKlien && ['TAKEN', 'IN_PROGRESS'].includes(quest.status)) {
             watchIdPromise = watchLocation(
                 (pos) => {
                     const newLoc = [pos.coords.latitude, pos.coords.longitude];

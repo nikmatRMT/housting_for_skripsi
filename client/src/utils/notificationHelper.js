@@ -2,8 +2,8 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 // Register plugin native QuestPolling
-const QuestPolling = Capacitor.isNativePlatform() 
-    ? registerPlugin('QuestPolling') 
+const QuestPolling = Capacitor.isNativePlatform()
+    ? registerPlugin('QuestPolling')
     : null;
 
 let nativeServiceStarted = false;
@@ -32,6 +32,9 @@ export async function requestNotificationPermission() {
  */
 export async function startNativePollingService(apiBaseUrl, userId, latitude, longitude, radius) {
     if (!Capacitor.isNativePlatform() || !QuestPolling || nativeServiceStarted) return;
+
+    // Pastikan izin notifikasi sudah disetujui sebelum memulai service
+    await requestNotificationPermission();
 
     try {
         await QuestPolling.startService({

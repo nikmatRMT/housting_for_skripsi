@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BottomNav from '../components/BottomNav';
+import { stopNativePollingService } from '../utils/notificationHelper';
 
 export default function Profil() {
     const navigate = useNavigate();
@@ -64,6 +65,8 @@ export default function Profil() {
 
     const handleLogout = () => {
         if (window.confirm('Yakin ingin keluar?')) {
+            // Matikan background polling service native jika ada
+            stopNativePollingService().catch(() => {});
             localStorage.removeItem('guestMode');
             localStorage.removeItem('token');
             localStorage.removeItem('myUserId');

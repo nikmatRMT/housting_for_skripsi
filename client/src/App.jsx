@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { App as CapApp } from '@capacitor/app';
 import axios from 'axios';
 import LandingLogin from './pages/LandingLogin';
 import LengkapiProfil from './pages/LengkapiProfil';
@@ -15,8 +16,12 @@ import Riwayat from './pages/Riwayat';
 import 'leaflet/dist/leaflet.css';
 import './index.css';
 
-// Atur base URL API untuk production di Vercel
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+// Atur base URL API untuk web/dev dan Android native
+const isNativePlatform = Capacitor.isNativePlatform();
+const hostedApiUrl = import.meta.env.VITE_API_URL || 'https://housting-for-skripsi.vercel.app';
+axios.defaults.baseURL = isNativePlatform
+  ? hostedApiUrl
+  : (import.meta.env.VITE_API_URL || '');
 
 function MobileOnlyWrapper({ children }) {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -63,7 +68,7 @@ function MobileOnlyWrapper({ children }) {
           <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📱</div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '16px', letterSpacing: '-0.5px' }}>AKSES WEBSITE DIBATASI</h1>
           <p style={{ fontSize: '1rem', lineHeight: '1.6', color: 'var(--text-muted, #64748b)', marginBottom: '24px' }}>
-            Sesuai ketentuan keamanan sistem Jasa Warga, halaman Klien dan Pekerja **hanya dapat diakses melalui Aplikasi Mobile Android/iOS**.<br/><br/>
+            Sesuai ketentuan keamanan sistem Jasa Warga, halaman Klien dan Pekerja **hanya dapat diakses melalui Aplikasi Mobile Android/iOS**.<br /><br />
             Halaman website ini khusus disediakan untuk panel kontrol **Administrator**.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -79,7 +84,7 @@ function MobileOnlyWrapper({ children }) {
               boxShadow: '2px 2px 0px var(--border-ink, #1e1e24)',
               cursor: 'pointer'
             }}>MASUK SEBAGAI ADMIN / GUEST</a>
-            
+
             <button onClick={handleBypass} style={{
               backgroundColor: 'transparent',
               border: 'none',
@@ -98,9 +103,90 @@ function MobileOnlyWrapper({ children }) {
   return children;
 }
 
-function App() {
+function getDefaultRoute() {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('userRole');
+  const guestMode = localStorage.getItem('guestMode') === 'true';
+
+  if (token) {
+    return role === 'admin' ? '/admin' : '/beranda';
+  }
+
+  if (guestMode) {
+    return '/beranda';
+  }
+
+  return '/login';
+}
+
+function PublicOnlyRoute({ children }) {
+  const defaultRoute = getDefaultRoute();
+  if (defaultRoute !== '/login') {
+    return <Navigate to={defaultRoute} replace />;
+  }
+  return children;
+}
+
+function RequireUserRoute({ children }) {
+  const token = localStorage.getItem('token');
+  const guestMode = localStorage.getItem('guestMode') === 'true';
+
+  if (!token && !guestMode) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function RequireAdminRoute({ children }) {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('userRole');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== 'admin') {
+    return <Navigate to="/beranda" replace />;
+  }
+
+  return children;
+}
+
+function AppRoutes() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common.Authorization;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+
+    const listenerPromise = CapApp.addListener('backButton', () => {
+      const currentPath = location.pathname;
+
+      if (currentPath === '/beranda' || currentPath === '/login' || currentPath === '/admin') {
+        CapApp.exitApp();
+        return;
+      }
+
+      navigate(-1);
+    });
+
+    return () => {
+      listenerPromise.then(listener => listener.remove());
+    };
+  }, [location.pathname, navigate]);
+
   return (
-    <Router>
+    <>
       <Toaster position="top-center" toastOptions={{
         style: {
           background: 'var(--surface)',
@@ -114,18 +200,26 @@ function App() {
         error: { iconTheme: { primary: 'var(--accent-coral)', secondary: 'var(--bg-main)' } }
       }} />
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="/login" element={<LandingLogin />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/lengkapi-profil" element={<LengkapiProfil />} />
-        <Route path="/beranda" element={<MobileOnlyWrapper><Beranda /></MobileOnlyWrapper>} />
-        <Route path="/buat-tugas" element={<MobileOnlyWrapper><BuatTugas /></MobileOnlyWrapper>} />
-        <Route path="/detail-tugas" element={<MobileOnlyWrapper><DetailTugas /></MobileOnlyWrapper>} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/riwayat" element={<MobileOnlyWrapper><Riwayat /></MobileOnlyWrapper>} />
-        <Route path="/profil" element={<MobileOnlyWrapper><Profil /></MobileOnlyWrapper>} />
-        <Route path="*" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
+        <Route path="/login" element={<PublicOnlyRoute><LandingLogin /></PublicOnlyRoute>} />
+        <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
+        <Route path="/lengkapi-profil" element={<RequireUserRoute><LengkapiProfil /></RequireUserRoute>} />
+        <Route path="/beranda" element={<RequireUserRoute><MobileOnlyWrapper><Beranda /></MobileOnlyWrapper></RequireUserRoute>} />
+        <Route path="/buat-tugas" element={<RequireUserRoute><MobileOnlyWrapper><BuatTugas /></MobileOnlyWrapper></RequireUserRoute>} />
+        <Route path="/detail-tugas" element={<RequireUserRoute><MobileOnlyWrapper><DetailTugas /></MobileOnlyWrapper></RequireUserRoute>} />
+        <Route path="/admin" element={<RequireAdminRoute><AdminDashboard /></RequireAdminRoute>} />
+        <Route path="/riwayat" element={<RequireUserRoute><MobileOnlyWrapper><Riwayat /></MobileOnlyWrapper></RequireUserRoute>} />
+        <Route path="/profil" element={<RequireUserRoute><MobileOnlyWrapper><Profil /></MobileOnlyWrapper></RequireUserRoute>} />
+        <Route path="*" element={<Navigate to={getDefaultRoute()} replace />} />
       </Routes>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppRoutes />
     </Router>
   );
 }
