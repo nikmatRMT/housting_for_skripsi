@@ -42,7 +42,7 @@
         <service
             android:name=".QuestPollingService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="location|dataSync" />
     </application>
 
     <!-- Permissions -->

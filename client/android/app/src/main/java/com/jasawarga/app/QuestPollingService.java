@@ -6,9 +6,14 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
@@ -53,16 +58,37 @@ public class QuestPollingService extends Service {
     private int questNotificationCounter = 2000;
     private PowerManager.WakeLock wakeLock;
 
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate() called");
         createNotificationChannels();
 
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                if (location != null) {
+                    latitude = location.getLatitude();
+                    longitude = location.getLongitude();
+                    Log.d(TAG, "Location updated from GPS: " + latitude + ", " + longitude);
+                }
+            }
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+            @Override
+            public void onProviderEnabled(String provider) {}
+            @Override
+            public void onProviderDisabled(String provider) {}
+        };
+
         try {
             Notification foregroundNotification = buildForegroundNotification("Menyiapkan pemantauan tugas...");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION | ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
             }
@@ -127,7 +153,7 @@ public class QuestPollingService extends Service {
         try {
             Notification foregroundNotification = buildForegroundNotification("Memantau tugas baru di sekitar Anda...");
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+                ServiceCompat.startForeground(this, FOREGROUND_NOTIFICATION_ID, foregroundNotification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION | ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
             } else {
                 startForeground(FOREGROUND_NOTIFICATION_ID, foregroundNotification);
             }
@@ -188,6 +214,31 @@ public class QuestPollingService extends Service {
     private void startPolling() {
         stopPolling();
 
+        // Request location updates secara native agar OS mendeteksi aktivitas GPS dan tidak membekukan (freeze) service
+        try {
+            if (locationManager != null && locationListener != null) {
+                boolean hasGpsPerm = true;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    hasGpsPerm = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                }
+                
+                if (hasGpsPerm) {
+                    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 10000, 0, locationListener);
+                    }
+                    if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 10000, 0, locationListener);
+                    }
+                    Log.d(TAG, "Native location updates (GPS + Network) registered successfully to prevent freeze.");
+                } else {
+                    Log.w(TAG, "ACCESS_FINE_LOCATION permission not granted. GPS tracking skipped.");
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal request location updates: " + e.getMessage(), e);
+            reportJavaErrorToBackend("Gagal request location updates", e);
+        }
+
         scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -205,6 +256,15 @@ public class QuestPollingService extends Service {
     }
 
     private void stopPolling() {
+        try {
+            if (locationManager != null && locationListener != null) {
+                locationManager.removeUpdates(locationListener);
+                Log.d(TAG, "Native location updates stopped.");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Gagal stop location updates: " + e.getMessage(), e);
+        }
+
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
             scheduler = null;
