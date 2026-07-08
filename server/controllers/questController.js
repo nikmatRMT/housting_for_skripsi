@@ -387,3 +387,56 @@ exports.getHistory = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// 10. Memberikan Rating Tugas (Validasi Klien)
+exports.rateQuest = async (req, res) => {
+    const User = require('../models/User');
+    try {
+        const { id } = req.params;
+        const { rating, ulasan } = req.body;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res.status(400).json({ success: false, message: "Rating harus bernilai 1 s.d 5" });
+        }
+
+        const quest = await Quest.findById(id);
+        if (!quest) return res.status(404).json({ success: false, message: "Tugas tidak ditemukan" });
+        if (quest.status !== 'COMPLETED') return res.status(400).json({ success: false, message: "Tugas belum selesai" });
+        if (quest.rating_pekerja !== null) return res.status(400).json({ success: false, message: "Tugas ini sudah diberi rating" });
+
+        quest.rating_pekerja = Number(rating);
+        quest.ulasan_pekerja = ulasan || '';
+        await quest.save();
+
+        // Hitung ulang rata-rata rating pekerja
+        const workerId = quest.pekerja_id;
+        const completedQuests = await Quest.find({ pekerja_id: workerId, status: 'COMPLETED', rating_pekerja: { $ne: null } });
+        
+        const totalRating = completedQuests.reduce((sum, q) => sum + q.rating_pekerja, 0);
+        const totalUlasan = completedQuests.length;
+        const avgRating = totalUlasan > 0 ? (totalRating / totalUlasan) : 0;
+
+        await User.findByIdAndUpdate(workerId, {
+            $set: { rating_rata_rata: Number(avgRating.toFixed(2)), total_ulasan: totalUlasan }
+        });
+
+        res.status(200).json({ success: true, message: "Rating berhasil dikirim!", data: quest });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// 11. Mendapatkan Daftar Pekerja Terbaik (Leaderboard)
+exports.getTopWorkers = async (req, res) => {
+    const User = require('../models/User');
+    try {
+        const workers = await User.find({ role: 'user', total_ulasan: { $gt: 0 } })
+            .sort({ rating_rata_rata: -1 })
+            .limit(20)
+            .select('nama_lengkap no_whatsapp rating_rata_rata total_ulasan');
+        res.status(200).json({ success: true, data: workers });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+

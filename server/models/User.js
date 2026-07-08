@@ -40,6 +40,14 @@ const userSchema = new mongoose.Schema({
     created_at: {
         type: Date,
         default: Date.now
+    },
+    rating_rata_rata: {
+        type: Number,
+        default: 0
+    },
+    total_ulasan: {
+        type: Number,
+        default: 0
     }
 });
 

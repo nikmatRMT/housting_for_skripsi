@@ -14,6 +14,24 @@ export default function Profil() {
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState('');
     const [editWA, setEditWA] = useState('');
+    const [showWorkersModal, setShowWorkersModal] = useState(false);
+    const [topWorkers, setTopWorkers] = useState([]);
+    const [loadingWorkers, setLoadingWorkers] = useState(false);
+
+    const handleOpenWorkersModal = async () => {
+        setShowWorkersModal(true);
+        setLoadingWorkers(true);
+        try {
+            const res = await axios.get('/api/quests/top-workers');
+            if (res.data.success) {
+                setTopWorkers(res.data.data);
+            }
+        } catch (e) {
+            toast.error("Gagal memuat daftar pekerja terbaik.");
+        } finally {
+            setLoadingWorkers(false);
+        }
+    };
 
     useEffect(() => {
         if (!isGuest) {
@@ -195,6 +213,18 @@ export default function Profil() {
                     </div>
                 )}
 
+                {/* Pekerja Terbaik Link */}
+                {!isGuest && (
+                    <div onClick={handleOpenWorkersModal} className="clean-card"
+                        style={{ padding: '16px 21px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', marginBottom: '2px' }}>Pekerja Terbaik</h3>
+                            <p style={{ fontSize: '12px', margin: 0 }}>Cari & hubungi pekerja dengan rating terbaik</p>
+                        </div>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '1.2rem' }}>→</span>
+                    </div>
+                )}
+
                 {/* Logout */}
                 <button onClick={handleLogout} className="btn" style={{ backgroundColor: '#fef2f0', color: 'var(--accent-coral)', border: '2px solid var(--accent-coral)', marginBottom: '16px' }}>
                     {isGuest ? 'KEMBALI KE LOGIN' : 'LOGOUT (KELUAR)'}
@@ -221,6 +251,70 @@ export default function Profil() {
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                 WhatsApp
                             </a>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal Pekerja Terbaik */}
+                {showWorkersModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+                    }}>
+                        <div className="clean-card" style={{
+                            backgroundColor: 'var(--surface)', width: '100%', maxWidth: '440px',
+                            maxHeight: '80vh', overflowY: 'auto', padding: '24px', position: 'relative'
+                        }}>
+                            <button onClick={() => setShowWorkersModal(false)} style={{
+                                position: 'absolute', top: '16px', right: '16px',
+                                background: 'none', border: 'none', fontSize: '1.2rem',
+                                fontWeight: 'bold', cursor: 'pointer', color: 'var(--text-main)'
+                            }}>✕</button>
+
+                            <h2 style={{ fontSize: '1.15rem', fontWeight: '800', marginBottom: '16px', color: 'var(--text-main)', textTransform: 'uppercase' }}>🌟 Rekomendasi Pekerja Terbaik</h2>
+
+                            {loadingWorkers ? (
+                                <p style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>Memuat...</p>
+                            ) : topWorkers.length === 0 ? (
+                                <p style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)' }}>Belum ada pekerja dengan rating saat ini.</p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                    {topWorkers.map((worker) => {
+                                        let cleanPhone = worker.no_whatsapp ? worker.no_whatsapp.replace(/\D/g, '') : '';
+                                        if (cleanPhone.startsWith('0')) {
+                                            cleanPhone = '62' + cleanPhone.substring(1);
+                                        }
+                                        const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Halo ${worker.nama_lengkap}, saya tertarik menggunakan jasa Anda lewat aplikasi Jasa Warga. Apakah Anda bersedia membantu saya menyelesaikan tugas...?`)}`;
+
+                                        return (
+                                            <div key={worker._id} style={{
+                                                border: '2px solid var(--border-ink)',
+                                                borderRadius: 'var(--radius-small)',
+                                                padding: '12px 14px',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                backgroundColor: 'var(--bg-main)'
+                                            }}>
+                                                <div>
+                                                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800' }}>{worker.nama_lengkap}</h4>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                                                        <span style={{ color: '#ffb000', fontSize: '0.9rem', fontWeight: '800' }}>★ {worker.rating_rata_rata}</span>
+                                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>({worker.total_ulasan} Ulasan)</span>
+                                                    </div>
+                                                </div>
+                                                <a href={waUrl} target="_blank" rel="noreferrer" className="btn btn-green" style={{
+                                                    fontSize: '11px', padding: '6px 12px', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none'
+                                                }}>
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+                                                    CHAT WA
+                                                </a>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

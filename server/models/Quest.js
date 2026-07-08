@@ -80,6 +80,21 @@ const questSchema = new mongoose.Schema({
     },
     expired_at: {
         type: Date
+    },
+    rating_pekerja: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: null
+    },
+    ulasan_pekerja: {
+        type: String,
+        default: null
+    },
+    cancel_reason: {
+        type: String,
+        enum: ['TIMEOUT_OPEN', 'WORKER_NO_SHOW', 'WORKER_INCOMPLETE', 'USER_CANCELED'],
+        default: null
     }
 });
 

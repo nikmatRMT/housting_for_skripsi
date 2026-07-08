@@ -1,5 +1,5 @@
 import toast from 'react-hot-toast';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
@@ -54,6 +54,9 @@ export default function Beranda() {
     // State sensor langkah lokal
     const [sensorSteps, setSensorSteps] = useState(0);
     const [sensorCalories, setSensorCalories] = useState(0);
+    const [searchRadius, setSearchRadius] = useState(1000); // default 1 km
+    const prevQuestsRef = useRef(null);
+    const [lastLoc, setLastLoc] = useState(null);
 
     const getTodayKey = () => {
         const now = new Date();
@@ -79,24 +82,50 @@ export default function Beranda() {
         setSensorCalories(storedCalories);
     }, [isGuest, MY_USER_ID]);
 
-    useEffect(() => {
-        const fetchQuests = async (lat, lng) => {
-            try {
-                const res = await axios.get(`/api/quests/nearby?latitude=${lat}&longitude=${lng}`);
-                if (res.data.success) {
-                    setQuests(res.data.data);
+    const fetchQuests = useCallback(async (lat, lng, radius) => {
+        try {
+            const rad = radius || searchRadius;
+            const res = await axios.get(`/api/quests/nearby?latitude=${lat}&longitude=${lng}&radius=${rad}`);
+            if (res.data.success) {
+                const newQuests = res.data.data;
+                
+                // Pemicu Notifikasi jika ada tugas baru
+                if ('Notification' in window && Notification.permission === 'granted' && prevQuestsRef.current !== null) {
+                    const oldIds = new Set(prevQuestsRef.current.map(q => q._id));
+                    newQuests.forEach(q => {
+                        const makerId = typeof q.pembuat_id === 'object' ? q.pembuat_id?._id : q.pembuat_id;
+                        if (!oldIds.has(q._id) && q.status === 'OPEN' && makerId !== MY_USER_ID) {
+                            new Notification("Ada Tugas Baru di Sekitar! 📍", {
+                                body: `${q.deskripsi.substring(0, 50)}... (Upah: Rp ${q.upah_jasa.toLocaleString('id-ID')})`,
+                                icon: '/logo.svg'
+                            });
+                        }
+                    });
                 }
-            } catch (err) {
-                console.error("Gagal mengambil data tugas:", err);
-            } finally {
-                setIsLoading(false);
+                prevQuestsRef.current = newQuests;
+                setQuests(newQuests);
             }
-        };
+        } catch (err) {
+            console.error("Gagal mengambil data tugas:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [searchRadius, MY_USER_ID]);
 
+    // Izin Notifikasi Browser
+    useEffect(() => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, []);
+
+    // Jalankan pencarian tugas awal
+    useEffect(() => {
         getCurrentLocation(
             (pos) => {
                 setLocationError(false);
-                fetchQuests(pos.coords.latitude, pos.coords.longitude);
+                setLastLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                fetchQuests(pos.coords.latitude, pos.coords.longitude, searchRadius);
             },
             (err) => {
                 console.warn("GPS Ditolak/Gagal, menggunakan lokasi default.");
@@ -105,11 +134,21 @@ export default function Beranda() {
                     toast.error("Sensor GPS HP Anda belum aktif! Harap aktifkan sakelar 'Lokasi' (GPS) pada HP Anda.");
                 }
                 setLocationError(true);
-                fetchQuests(-3.440, 114.836);
+                setLastLoc({ lat: -3.440, lng: 114.836 });
+                fetchQuests(-3.440, 114.836, searchRadius);
             },
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
-    }, []);
+    }, [fetchQuests, searchRadius]);
+
+    // Polling periodik 15 detik untuk update data tugas & memicu notifikasi
+    useEffect(() => {
+        if (!lastLoc) return;
+        const pollInterval = setInterval(() => {
+            fetchQuests(lastLoc.lat, lastLoc.lng, searchRadius);
+        }, 15000);
+        return () => clearInterval(pollInterval);
+    }, [lastLoc, searchRadius, fetchQuests]);
 
     // Deteksi perubahan status GPS (aktif/nonaktif) secara berkala di latar belakang setiap 5 detik
     useEffect(() => {
@@ -118,15 +157,16 @@ export default function Beranda() {
                 (pos) => {
                     if (locationError) {
                         setLocationError(false);
-                        fetchQuests(pos.coords.latitude, pos.coords.longitude);
+                        setLastLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                        fetchQuests(pos.coords.latitude, pos.coords.longitude, searchRadius);
                     }
                 },
                 (err) => {
-                    // Abaikan jika error hanya karena pencarian sinyal lambat (timeout)
                     const isTimeout = err.code === 3 || (err.message && err.message.toLowerCase().includes('timeout'));
                     if (!isTimeout && !locationError) {
                         setLocationError(true);
-                        fetchQuests(-3.440, 114.836);
+                        setLastLoc({ lat: -3.440, lng: 114.836 });
+                        fetchQuests(-3.440, 114.836, searchRadius);
                     }
                 },
                 { enableHighAccuracy: true, timeout: 8000 }
@@ -134,7 +174,7 @@ export default function Beranda() {
         }, 5000);
 
         return () => clearInterval(intervalId);
-    }, [locationError]);
+    }, [locationError, fetchQuests, searchRadius]);
 
     // Registrasi sensor gerak HP akselerometer untuk real-time Pedometer
     useEffect(() => {
@@ -457,6 +497,39 @@ export default function Beranda() {
 
                 {/* ── Daftar Tugas Tersedia ──────────────── */}
 
+                <div className="clean-card" style={{ padding: '16px 20px', marginBottom: '16px', backgroundColor: 'var(--surface)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16.2 7.8-2 2-2 2-2 2"/><circle cx="12" cy="12" r="1"/></svg>
+                            RADIUS PENCARIAN
+                        </span>
+                        <span style={{ fontWeight: '800', fontSize: '0.95rem', color: 'var(--accent-coral)' }}>{searchRadius >= 1000 ? `${(searchRadius/1000).toFixed(1)} KM` : `${searchRadius} meter`}</span>
+                    </div>
+                    <input 
+                        type="range" 
+                        min="500" 
+                        max="5000" 
+                        step="500" 
+                        value={searchRadius} 
+                        onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setSearchRadius(val);
+                            if (lastLoc) fetchQuests(lastLoc.lat, lastLoc.lng, val);
+                        }} 
+                        style={{ 
+                            width: '100%', 
+                            cursor: 'pointer',
+                            accentColor: 'var(--accent-coral)'
+                        }} 
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
+                        <span>500m</span>
+                        <span>1 KM</span>
+                        <span>2.5 KM</span>
+                        <span>5 KM</span>
+                    </div>
+                </div>
+
                 <div style={{ marginTop: '12px' }}>
                     {isLoading ? (
                         <div style={{ textAlign: 'center', padding: '32px 0' }}>
@@ -472,7 +545,7 @@ export default function Beranda() {
                                     <path d="M12 20h.01"/>
                                 </svg>
                             </div>
-                            <p style={{ color: 'var(--text-muted)' }}>Belum ada permintaan bantuan dalam radius 1 KM dari lokasi Anda saat ini.</p>
+                            <p style={{ color: 'var(--text-muted)' }}>Belum ada permintaan bantuan dalam radius {searchRadius >= 1000 ? `${(searchRadius/1000).toFixed(1)} KM` : `${searchRadius} meter`} dari lokasi Anda saat ini.</p>
                         </div>
                     ) : (
                         quests.map((quest) => (

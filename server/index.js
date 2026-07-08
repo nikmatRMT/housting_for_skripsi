@@ -56,26 +56,26 @@ const Quest = require('./models/Quest');
 app.get('/api/sweeper', async (req, res) => {
     try {
         const now = Date.now();
-        const oneHourAgo = new Date(now - 60 * 60 * 1000);
+        const fourHoursAgo = new Date(now - 4 * 60 * 60 * 1000); // Diperpanjang ke 4 Jam
         const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
         const twelveHoursAgo = new Date(now - 12 * 60 * 60 * 1000);
 
-        // 1. Batalkan tugas OPEN yang sudah > 1 jam
+        // 1. Batalkan tugas OPEN yang sudah > 4 jam
         const canceledOpen = await Quest.updateMany(
-            { status: 'OPEN', created_at: { $lt: oneHourAgo } },
-            { $set: { status: 'CANCELED' } }
+            { status: 'OPEN', created_at: { $lt: fourHoursAgo } },
+            { $set: { status: 'CANCELED', cancel_reason: 'TIMEOUT_OPEN' } }
         );
 
         // 2. Batalkan tugas TAKEN yang sudah > 2 jam
         const canceledTaken = await Quest.updateMany(
             { status: 'TAKEN', taken_at: { $lt: twoHoursAgo } },
-            { $set: { status: 'CANCELED' } }
+            { $set: { status: 'CANCELED', cancel_reason: 'WORKER_NO_SHOW' } }
         );
 
         // 3. Batalkan tugas IN_PROGRESS yang sudah > 12 jam
         const canceledInProgress = await Quest.updateMany(
             { status: 'IN_PROGRESS', arrived_at: { $lt: twelveHoursAgo } },
-            { $set: { status: 'CANCELED' } }
+            { $set: { status: 'CANCELED', cancel_reason: 'WORKER_INCOMPLETE' } }
         );
 
         const logMsg = `[Sweeper] Canceled ${canceledOpen.modifiedCount} OPEN, ${canceledTaken.modifiedCount} TAKEN, ${canceledInProgress.modifiedCount} IN_PROGRESS tasks.`;
@@ -101,26 +101,26 @@ if (!process.env.VERCEL) {
     setInterval(async () => {
         try {
             const now = Date.now();
-            const oneHourAgo = new Date(now - 60 * 60 * 1000);
+            const fourHoursAgo = new Date(now - 4 * 60 * 60 * 1000); // Diperpanjang ke 4 Jam
             const twoHoursAgo = new Date(now - 2 * 60 * 60 * 1000);
             const twelveHoursAgo = new Date(now - 12 * 60 * 60 * 1000);
 
-            // 1. Batalkan tugas OPEN yang sudah > 1 jam
+            // 1. Batalkan tugas OPEN yang sudah > 4 jam
             const canceledOpen = await Quest.updateMany(
-                { status: 'OPEN', created_at: { $lt: oneHourAgo } },
-                { $set: { status: 'CANCELED' } }
+                { status: 'OPEN', created_at: { $lt: fourHoursAgo } },
+                { $set: { status: 'CANCELED', cancel_reason: 'TIMEOUT_OPEN' } }
             );
 
             // 2. Batalkan tugas TAKEN yang sudah > 2 jam
             const canceledTaken = await Quest.updateMany(
                 { status: 'TAKEN', taken_at: { $lt: twoHoursAgo } },
-                { $set: { status: 'CANCELED' } }
+                { $set: { status: 'CANCELED', cancel_reason: 'WORKER_NO_SHOW' } }
             );
 
             // 3. Batalkan tugas IN_PROGRESS yang sudah > 12 jam
             const canceledInProgress = await Quest.updateMany(
                 { status: 'IN_PROGRESS', arrived_at: { $lt: twelveHoursAgo } },
-                { $set: { status: 'CANCELED' } }
+                { $set: { status: 'CANCELED', cancel_reason: 'WORKER_INCOMPLETE' } }
             );
 
             if (canceledOpen.modifiedCount > 0 || canceledTaken.modifiedCount > 0 || canceledInProgress.modifiedCount > 0) {

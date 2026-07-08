@@ -12,6 +12,8 @@ router.put('/:id/take', questController.takeQuest);
 router.put('/:id/start', questController.startQuest);
 router.put('/:id/complete', questController.completeQuest);
 router.put('/:id/location', questController.updatePekerjaLocation);
+router.get('/top-workers', questController.getTopWorkers);
+router.put('/:id/rate', questController.rateQuest);
 router.delete('/:id', questController.deleteQuest);
 
 module.exports = router;

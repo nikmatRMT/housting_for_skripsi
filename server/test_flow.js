@@ -209,6 +209,30 @@ const runSimulation = async () => {
         console.log('   ❌ Error Step 7:', e.message);
     }
 
+    // STEP 8: Klien Memberikan Rating & Ulasan untuk Pekerja
+    try {
+        console.log(`[STEP 8] Klien Memberikan Rating Bintang 5 ke Pekerja...`);
+        const resRate = await request(`/api/quests/${questId}/rate`, 'PUT', { rating: 5, ulasan: 'Kerja cepat dan bersih!' });
+        if (resRate.statusCode === 200 && resRate.body.success) {
+            console.log(`   ✅ Rating Berhasil Dikirim!`);
+            
+            // Verifikasi pembaruan data rating di profil pekerja
+            const resUser = await request(`/api/admin/users`);
+            const pekerjaUpdate = resUser.body.data.find(u => u._id === pekerjaId);
+            if (pekerjaUpdate) {
+                console.log(`   ✅ Verifikasi Statistik Rating Pekerja Berhasil!`);
+                console.log(`      Rating Rata-rata Pekerja: ${pekerjaUpdate.rating_rata_rata}/5`);
+                console.log(`      Total Ulasan: ${pekerjaUpdate.total_ulasan}\n`);
+            } else {
+                console.log('   ❌ Gagal Menemukan Data Pekerja.');
+            }
+        } else {
+            console.log('   ❌ Gagal Mengirimkan Rating:', resRate.body?.message || resRate.raw);
+        }
+    } catch (e) {
+        console.log('   ❌ Error Step 8:', e.message);
+    }
+
     console.log('==================================================');
     console.log('🎉 SIMULASI SELESAI & SELURUH ALUR BERHASIL! 🎉');
     console.log('==================================================');

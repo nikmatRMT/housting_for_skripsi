@@ -98,10 +98,30 @@ export default function DetailTugas() {
     const [liveDistance, setLiveDistance] = useState(null);
     const [showSuccessUI, setShowSuccessUI] = useState(false);
     const [timeLeft, setTimeLeft] = useState('');
+    const [ratingInput, setRatingInput] = useState(5);
+    const [ulasanInput, setUlasanInput] = useState('');
 
     const MY_USER_ID = localStorage.getItem('myUserId');
     const pembuatIdString = quest ? (typeof quest.pembuat_id === 'object' ? quest.pembuat_id?._id : quest.pembuat_id) : null;
     const isKlien = pembuatIdString === MY_USER_ID;
+
+    const handleKirimRating = async () => {
+        setIsSubmitting(true);
+        try {
+            const res = await axios.put(`/api/quests/${quest._id}/rate`, {
+                rating: ratingInput,
+                ulasan: ulasanInput
+            });
+            if (res.data.success) {
+                toast.success("Ulasan berhasil dikirim!");
+                setQuest(res.data.data);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Gagal mengirim rating");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     useEffect(() => {
         let watchIdPromise;
@@ -120,12 +140,26 @@ export default function DetailTugas() {
                 (err) => console.log("Gagal ambil lokasi user:", err),
                 { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
             );
-        } else if (quest && isKlien && (quest.status === 'TAKEN' || quest.status === 'IN_PROGRESS')) {
+        } else if (quest && isKlien && ['OPEN', 'TAKEN', 'IN_PROGRESS'].includes(quest.status)) {
             const interval = setInterval(async () => {
                 try {
                     const res = await axios.get(`/api/quests/my-active?user_id=${MY_USER_ID}`);
                     if (res.data.success && res.data.data) {
                         const fetched = res.data.data;
+                        
+                        // Notifikasi saat status berpindah dari OPEN ke TAKEN
+                        if (quest.status === 'OPEN' && fetched.status === 'TAKEN') {
+                            if ('Notification' in window && Notification.permission === 'granted') {
+                                new Notification("Tugas Anda Diambil! 🏃", {
+                                    body: `${fetched.pekerja_id?.nama_lengkap || 'Pekerja'} telah mengambil tugas Anda dan sedang menuju ke lokasi.`,
+                                    icon: '/logo.svg'
+                                });
+                            }
+                            toast.success("Tugas Anda telah diambil oleh Pekerja!");
+                        }
+                        
+                        setQuest(fetched);
+
                         if (fetched.pekerja_lokasi && fetched.pekerja_lokasi.latitude) {
                             setUserLocation([fetched.pekerja_lokasi.latitude, fetched.pekerja_lokasi.longitude]);
                             if (quest.lokasi && quest.lokasi.coordinates) {
@@ -135,7 +169,12 @@ export default function DetailTugas() {
                             }
                         }
                     }
-                } catch (e) {}
+                } catch (e) {
+                    if (e.response?.status === 404 && quest.status !== 'COMPLETED') {
+                        toast.error("Tugas ini tidak aktif lagi (dibatalkan/selesai).");
+                        navigate('/beranda');
+                    }
+                }
             }, 5000);
             return () => clearInterval(interval);
         }
@@ -146,7 +185,7 @@ export default function DetailTugas() {
                 });
             }
         };
-    }, [quest, isKlien, MY_USER_ID]);
+    }, [quest, isKlien, MY_USER_ID, navigate]);
 
     useEffect(() => {
         if (quest && quest.status === 'TAKEN' && quest.taken_at) {
@@ -428,49 +467,108 @@ export default function DetailTugas() {
 
                 {/* PIN Section */}
                 {isKlien ? (
-                    <div className="clean-card" style={{ padding: '20px 21px', border: '2px dashed var(--accent-green)', textAlign: 'center', marginBottom: '20px' }}>
-                        <p style={{ color: 'var(--accent-green)', fontWeight: '700', marginBottom: '8px', fontSize: '13px' }}>PIN RAHASIA TUGAS INI:</p>
-                        <h1 style={{ fontSize: '2.5rem', letterSpacing: '8px', marginBottom: '8px' }}>{quest.pin_rahasia}</h1>
-                        <p style={{ fontSize: '13px' }}>Berikan PIN ini kepada Pekerja HANYA jika tugas telah diselesaikan dengan baik.</p>
-                    </div>
-                ) : (
-                    <div className="clean-card" style={{ padding: '20px 21px', marginBottom: '20px' }}>
-                        {quest.status === 'TAKEN' ? (
-                            <div style={{ textAlign: 'center' }}>
-                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '14px' }}>Konfirmasi jika Anda sudah sampai di lokasi tujuan agar Klien tahu dan timer pembatalan otomatis dihentikan.</p>
-                                
-                                {liveDistance !== null && liveDistance > 50 ? (
-                                    <div style={{ backgroundColor: '#fef2f0', border: '2px dashed var(--accent-coral)', padding: '16px', borderRadius: 'var(--radius-small)', textAlign: 'center', marginBottom: '14px' }}>
-                                        <p style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '6px', color: 'var(--accent-coral)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> Anda Masih Jauh
-                                        </p>
-                                        <p style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text-muted)' }}>
-                                            Jarak Anda: <strong>{Math.round(liveDistance)} meter</strong>. Mendekatlah ke radius <strong>50 meter</strong> untuk konfirmasi.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <button onClick={handleMulaiKerja} disabled={isSubmitting || liveDistance === null} className="btn btn-primary" style={{ width: '100%', marginBottom: '0' }}>
-                                        {isSubmitting ? 'Memproses...' : (liveDistance === null ? 'Mendeteksi GPS...' : '📍 SAYA SUDAH SAMPAI')}
-                                    </button>
-                                )}
+                    quest.status === 'COMPLETED' ? (
+                        quest.rating_pekerja !== null ? (
+                            <div className="clean-card" style={{ padding: '20px 21px', border: '2px solid var(--border-ink)', textAlign: 'center', marginBottom: '20px', backgroundColor: 'var(--surface)' }}>
+                                <p style={{ color: 'var(--accent-coral)', fontWeight: '800', marginBottom: '8px', fontSize: '13px', textTransform: 'uppercase' }}>Ulasan yang Anda Berikan:</p>
+                                <div style={{ fontSize: '1.5rem', color: '#ffb000', marginBottom: '10px' }}>
+                                    {'★'.repeat(quest.rating_pekerja)}{'☆'.repeat(5 - quest.rating_pekerja)}
+                                </div>
+                                <p style={{ fontSize: '14px', fontStyle: 'italic', color: 'var(--text-main)' }}>"{quest.ulasan_pekerja || 'Tidak ada ulasan tertulis.'}"</p>
                             </div>
                         ) : (
-                            <>
-                                <p style={{ color: 'var(--text-main)', fontWeight: '700', marginBottom: '14px', textAlign: 'center', fontSize: '13px' }}>INPUT PIN PENYELESAIAN</p>
-                                <input 
-                                    type="text" maxLength="4" value={pinInput}
-                                    onChange={(e) => setPinInput(e.target.value)}
-                                    placeholder="Minta PIN dari Klien"
+                            <div className="clean-card" style={{ padding: '20px 21px', border: '2px solid var(--border-ink)', marginBottom: '20px', backgroundColor: 'var(--surface)' }}>
+                                <p style={{ color: 'var(--accent-coral)', fontWeight: '800', marginBottom: '12px', fontSize: '13.5px', textAlign: 'center', textTransform: 'uppercase' }}>Beri Rating Pekerja 🌟</p>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', fontSize: '2rem', cursor: 'pointer', marginBottom: '14px' }}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <span 
+                                            key={star} 
+                                            onClick={() => setRatingInput(star)}
+                                            style={{ color: star <= ratingInput ? '#ffb000' : '#CBD5E1' }}
+                                        >
+                                            ★
+                                        </span>
+                                    ))}
+                                </div>
+                                <textarea
                                     className="form-input"
-                                    style={{ textAlign: 'center', letterSpacing: '6px', fontSize: '1.2rem', marginBottom: '14px', backgroundColor: 'var(--surface)' }}
-                                    id="detail-pin"
+                                    rows="3"
+                                    placeholder="Tulis ulasan/feedback untuk pekerja..."
+                                    value={ulasanInput}
+                                    onChange={(e) => setUlasanInput(e.target.value)}
+                                    style={{ fontSize: '13px', marginBottom: '14px', resize: 'none' }}
                                 />
-                                <button onClick={handleSelesaikanTugas} disabled={isSubmitting} className="btn btn-primary" id="detail-selesaikan">
-                                    {isSubmitting ? 'Memproses...' : 'SELESAIKAN TUGAS'}
+                                <button onClick={handleKirimRating} disabled={isSubmitting} className="btn btn-primary" style={{ width: '100%', marginBottom: 0 }}>
+                                    {isSubmitting ? 'Mengirim...' : 'KIRIM RATING & ULASAN'}
                                 </button>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                        )
+                    ) : (
+                        <div className="clean-card" style={{ padding: '20px 21px', border: '2px dashed var(--accent-green)', textAlign: 'center', marginBottom: '20px' }}>
+                            <p style={{ color: 'var(--accent-green)', fontWeight: '700', marginBottom: '8px', fontSize: '13px' }}>PIN RAHASIA TUGAS INI:</p>
+                            <h1 style={{ fontSize: '2.5rem', letterSpacing: '8px', marginBottom: '8px' }}>{quest.pin_rahasia}</h1>
+                            <p style={{ fontSize: '13px' }}>Berikan PIN ini kepada Pekerja HANYA jika tugas telah diselesaikan dengan baik.</p>
+                        </div>
+                    )
+                ) : (
+                    quest.status === 'COMPLETED' ? (
+                        <div className="clean-card" style={{ padding: '20px 21px', border: '2px solid var(--accent-green)', backgroundColor: '#f0fdf4', textAlign: 'center', marginBottom: '20px' }}>
+                            <p style={{ color: 'var(--accent-green)', fontWeight: '800', marginBottom: '8px', fontSize: '14px' }}>🎉 TUGAS SELESAI!</p>
+                            <p style={{ fontSize: '13px', color: 'var(--text-main)' }}>Terima kasih telah membantu warga. Upah Anda sudah berhasil ditambahkan ke saldo dompet.</p>
+                        </div>
+                    ) : (
+                        <div className="clean-card" style={{ padding: '20px 21px', marginBottom: '20px' }}>
+                            {quest.status === 'TAKEN' ? (
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '14px' }}>Konfirmasi jika Anda sudah sampai di lokasi tujuan agar Klien tahu dan timer pembatalan otomatis dihentikan.</p>
+                                    
+                                    {liveDistance !== null && liveDistance > 50 ? (
+                                        <div style={{ backgroundColor: '#fef2f0', border: '2px dashed var(--accent-coral)', padding: '16px', borderRadius: 'var(--radius-small)', textAlign: 'center', marginBottom: '14px' }}>
+                                            <p style={{ fontSize: '1rem', fontWeight: '800', marginBottom: '6px', color: 'var(--accent-coral)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg> Anda Masih Jauh
+                                            </p>
+                                            <p style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text-muted)' }}>
+                                                Jarak Anda: <strong>{Math.round(liveDistance)} meter</strong>. Mendekatlah ke radius <strong>50 meter</strong> untuk konfirmasi.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <button onClick={handleMulaiKerja} disabled={isSubmitting || liveDistance === null} className="btn btn-primary" style={{ width: '100%', marginBottom: '0' }}>
+                                            {isSubmitting ? 'Memproses...' : (liveDistance === null ? 'Mendeteksi GPS...' : '📍 SAYA SUDAH SAMPAI')}
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <>
+                                    <p style={{ color: 'var(--text-main)', fontWeight: '700', marginBottom: '14px', textAlign: 'center', fontSize: '13px' }}>INPUT PIN PENYELESAIAN</p>
+                                    
+                                    {quest.kategori === 'jastip' && (
+                                        <div style={{ marginBottom: '14px', textAlign: 'left' }}>
+                                            <label style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>UNGGAH FOTO NOTA / STRUK BELANJA (MOCKUP)</label>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                className="form-input" 
+                                                style={{ fontSize: '12px', padding: '8px 10px', backgroundColor: 'var(--surface)' }} 
+                                            />
+                                            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>*Wajib melampirkan bukti nota belanja fisik untuk verifikasi talangan.</p>
+                                        </div>
+                                    )}
+
+                                    <input 
+                                        type="text" maxLength="4" value={pinInput}
+                                        onChange={(e) => setPinInput(e.target.value)}
+                                        placeholder="Minta PIN dari Klien"
+                                        className="form-input"
+                                        style={{ textAlign: 'center', letterSpacing: '6px', fontSize: '1.2rem', marginBottom: '14px', backgroundColor: 'var(--surface)' }}
+                                        id="detail-pin"
+                                    />
+                                    <button onClick={handleSelesaikanTugas} disabled={isSubmitting} className="btn btn-primary" id="detail-selesaikan">
+                                        {isSubmitting ? 'Memproses...' : 'SELESAIKAN TUGAS'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )
                 )}
 
                 {/* Chat WA */}

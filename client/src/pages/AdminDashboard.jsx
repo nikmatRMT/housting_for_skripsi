@@ -267,13 +267,35 @@ export default function AdminDashboard() {
                 const workers = {};
                 quests.filter(q => q.pekerja_id).forEach(q => {
                     const wid = q.pekerja_id._id;
-                    if(!workers[wid]) workers[wid] = { name: q.pekerja_id.nama_lengkap, no_wa: q.pekerja_id.no_whatsapp, diambil: 0, selesai: 0, batal: 0, upah: 0 };
+                    if(!workers[wid]) workers[wid] = { 
+                        name: q.pekerja_id.nama_lengkap, 
+                        no_wa: q.pekerja_id.no_whatsapp, 
+                        rating: q.pekerja_id.rating_rata_rata || 0,
+                        total_ulasan: q.pekerja_id.total_ulasan || 0,
+                        diambil: 0, selesai: 0, batal: 0, upah: 0,
+                        no_show: 0, incomplete: 0
+                    };
                     workers[wid].diambil++;
-                    if(q.status === 'COMPLETED') { workers[wid].selesai++; workers[wid].upah += (q.upah_jasa || 0); }
-                    if(q.status === 'CANCELED') workers[wid].batal++;
+                    if(q.status === 'COMPLETED') { 
+                        workers[wid].selesai++; 
+                        workers[wid].upah += (q.upah_jasa || 0); 
+                    }
+                    if(q.status === 'CANCELED') {
+                        workers[wid].batal++;
+                        if(q.cancel_reason === 'WORKER_NO_SHOW') workers[wid].no_show++;
+                        if(q.cancel_reason === 'WORKER_INCOMPLETE') workers[wid].incomplete++;
+                    }
                 });
                 const rows = Object.values(workers).map((w, i) => [
-                    i + 1, w.name, w.no_wa, w.selesai, w.batal, `${w.diambil ? Math.round((w.selesai/w.diambil)*100) : 0}%`, `Rp ${w.upah.toLocaleString('id-ID')}`
+                    i + 1, 
+                    w.name, 
+                    w.no_wa, 
+                    `⭐ ${w.rating} (${w.total_ulasan})`,
+                    w.selesai, 
+                    w.no_show, 
+                    w.incomplete, 
+                    `${w.diambil ? Math.round((w.selesai/w.diambil)*100) : 0}%`, 
+                    `Rp ${w.upah.toLocaleString('id-ID')}`
                 ]);
                 return {
                     title: 'LAPORAN PERFORMA PEKERJA',
@@ -282,8 +304,10 @@ export default function AdminDashboard() {
                         { name: 'No', align: 'center' },
                         { name: 'Nama Pekerja' },
                         { name: 'No. WhatsApp' },
-                        { name: 'Tugas Selesai', align: 'center' },
-                        { name: 'Tugas Batal', align: 'center' },
+                        { name: 'Rating (Ulasan)', align: 'center' },
+                        { name: 'Selesai', align: 'center' },
+                        { name: 'No-Show', align: 'center' },
+                        { name: 'Incomplete', align: 'center' },
                         { name: 'Rasio Sukses', align: 'center' },
                         { name: 'Total Upah (Rp)', align: 'right' }
                     ],

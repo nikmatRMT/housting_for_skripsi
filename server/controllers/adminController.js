@@ -104,7 +104,7 @@ exports.getQuests = async (req, res) => {
     try {
         const quests = await Quest.find()
             .populate('pembuat_id', 'nama_lengkap email no_whatsapp')
-            .populate('pekerja_id', 'nama_lengkap email no_whatsapp')
+            .populate('pekerja_id', 'nama_lengkap email no_whatsapp rating_rata_rata total_ulasan')
             .sort({ created_at: -1 });
         res.json({
             success: true,
@@ -169,7 +169,7 @@ exports.getReportsData = async (req, res) => {
         const users = await User.find().sort({ created_at: -1 });
         const quests = await Quest.find()
             .populate('pembuat_id', 'nama_lengkap email no_whatsapp')
-            .populate('pekerja_id', 'nama_lengkap email no_whatsapp')
+            .populate('pekerja_id', 'nama_lengkap email no_whatsapp rating_rata_rata total_ulasan')
             .sort({ created_at: -1 });
 
         res.json({
