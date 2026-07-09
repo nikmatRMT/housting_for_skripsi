@@ -85,6 +85,18 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleResetPassword = async (userId) => {
+        if (!window.confirm("Yakin ingin mereset password pengguna ini menjadi 'warga123'?")) return;
+        try {
+            const res = await axios.put(`/api/admin/users/${userId}/reset-password`);
+            if (res.data.success) {
+                toast.success(res.data.message);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Gagal mereset password");
+        }
+    };
+
     const handleCancelQuest = async (questId) => {
         if (!window.confirm("PERINGATAN: Yakin ingin membatalkan tugas ini secara paksa? Aksi ini akan mengubah status tugas menjadi CANCELED.")) return;
         try {
@@ -764,6 +776,15 @@ export default function AdminDashboard() {
                                                                 }}
                                                             >
                                                                 Hapus
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => handleResetPassword(user._id)}
+                                                                style={{ 
+                                                                    border: 'none', background: '#3B82F6', 
+                                                                    color: '#fff', padding: '6px 14px', cursor: 'pointer', fontWeight: '700', borderRadius: '6px', fontSize: '0.8rem', transition: 'transform 0.1s' 
+                                                                }}
+                                                            >
+                                                                Reset Sandi
                                                             </button>
                                                         </div>
                                                     ) : (

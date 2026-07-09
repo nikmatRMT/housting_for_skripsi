@@ -197,3 +197,28 @@ exports.getReportsData = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// 6. Reset password pengguna ke default "warga123"
+exports.resetUserPassword = async (req, res) => {
+    const bcrypt = require('bcryptjs');
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "Pengguna tidak ditemukan." });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash('warga123', salt);
+
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: `Kata sandi untuk ${user.nama_lengkap} berhasil di-reset menjadi "warga123".` 
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

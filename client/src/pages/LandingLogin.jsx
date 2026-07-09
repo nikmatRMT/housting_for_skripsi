@@ -11,6 +11,8 @@ export default function LandingLogin() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showForgotModal, setShowForgotModal] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
 
     // Cek sesi aktif saat pertama kali dibuka untuk auto-redirect
     useEffect(() => {
@@ -65,6 +67,19 @@ export default function LandingLogin() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleForgotSubmit = (e) => {
+        e.preventDefault();
+        if (!forgotEmail) return;
+        
+        const adminWhatsapp = '6289999999999'; 
+        const messageText = `Halo Admin Jasa Warga, saya lupa password untuk akun dengan email: ${forgotEmail}. Mohon bantuan untuk melakukan reset password.`;
+        const waUrl = `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent(messageText)}`;
+        
+        setShowForgotModal(false);
+        setForgotEmail('');
+        window.open(waUrl, '_blank');
     };
 
     const handleGuest = async () => {
@@ -166,6 +181,14 @@ export default function LandingLogin() {
                                     <span>Kata sandi terlalu pendek! Minimal adalah 6 karakter.</span>
                                 </div>
                             )}
+                            <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                                <span 
+                                    onClick={() => setShowForgotModal(true)}
+                                    style={{ fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+                                >
+                                    Lupa Password?
+                                </span>
+                            </div>
                         </div>
 
                         <button
@@ -216,6 +239,49 @@ export default function LandingLogin() {
                 </p>
             </div>
 
+            {/* Modal Lupa Password */}
+            {showForgotModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+                }}>
+                    <div className="clean-card" style={{
+                        backgroundColor: 'var(--color-pure-white)', width: '100%', maxWidth: '340px',
+                        padding: '24px', position: 'relative', textAlign: 'center', border: '3px solid var(--color-ink-black)',
+                        boxShadow: 'var(--shadow-card, 6px 6px 0px #000)'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔑</div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px', color: 'var(--color-ink-black)', fontFamily: 'var(--font-outfit)' }}>LUPA PASSWORD?</h2>
+                        <p style={{ fontSize: '13px', color: 'var(--color-stone-gray)', marginBottom: '16px', lineHeight: '1.5', fontFamily: 'var(--font-inter)' }}>
+                            Masukkan email terdaftar Anda. Kami akan mengarahkan Anda ke WhatsApp Admin untuk memverifikasi dan melakukan reset sandi.
+                        </p>
+                        <form onSubmit={handleForgotSubmit}>
+                            <input
+                                type="email"
+                                value={forgotEmail}
+                                onChange={(e) => setForgotEmail(e.target.value)}
+                                required
+                                placeholder="Masukkan email terdaftar"
+                                className="form-input"
+                                style={{ marginBottom: '16px', textAlign: 'center' }}
+                            />
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button type="button" onClick={() => { setShowForgotModal(false); setForgotEmail(''); }} style={{
+                                    flex: 1, backgroundColor: 'var(--color-pure-white)', border: '2px solid var(--color-ink-black)', margin: 0, padding: '10px', fontWeight: '700', cursor: 'pointer', borderRadius: '50px'
+                                }}>
+                                    BATAL
+                                </button>
+                                <button type="submit" style={{
+                                    flex: 1, backgroundColor: 'var(--accent-green, #10B981)', color: 'white', border: '2px solid var(--color-ink-black)', margin: 0, padding: '10px', fontWeight: '700', cursor: 'pointer', borderRadius: '50px', boxShadow: '2px 2px 0px var(--color-ink-black)'
+                                }}>
+                                    KIRIM WA
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -14,6 +14,9 @@ router.put('/users/:userId/toggle-status', adminController.toggleUserStatus);
 // Hapus pengguna permanen
 router.delete('/users/:userId', adminController.deleteUser);
 
+// Route untuk mereset password pengguna
+router.put('/users/:userId/reset-password', adminController.resetUserPassword);
+
 // Route untuk memantau semua tugas
 router.get('/quests', adminController.getQuests);
 
