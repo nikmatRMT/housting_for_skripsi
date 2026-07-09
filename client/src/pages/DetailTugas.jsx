@@ -6,7 +6,7 @@ import L from 'leaflet';
 import axios from 'axios';
 import 'leaflet-routing-machine';
 import BottomNav from '../components/BottomNav';
-import { watchLocation, stopWatchLocation } from '../utils/geolocationHelper';
+import { watchLocation, stopWatchLocation, getCurrentLocation } from '../utils/geolocationHelper';
 import { showNotification } from '../utils/notificationHelper';
 
 const customIcon = new L.DivIcon({
@@ -256,8 +256,23 @@ export default function DetailTugas() {
     const handleSelesaikanTugas = async () => {
         if (!pinInput || pinInput.length !== 4) { toast.error('Masukkan 4-digit PIN dengan benar!'); return; }
         setIsSubmitting(true);
+        
+        let currentLat = null;
+        let currentLng = null;
         try {
-            const res = await axios.put(`/api/quests/${quest._id}/complete`, { pin: pinInput });
+            const pos = await getCurrentLocation();
+            currentLat = pos.latitude;
+            currentLng = pos.longitude;
+        } catch (locErr) {
+            console.warn("Gagal mendapatkan lokasi untuk geofencing:", locErr);
+        }
+
+        try {
+            const res = await axios.put(`/api/quests/${quest._id}/complete`, { 
+                pin: pinInput,
+                latitude: currentLat,
+                longitude: currentLng
+            });
             if (res.data.success) { setShowSuccessUI(true); setTimeout(() => navigate('/beranda'), 2500); }
         } catch (err) { toast.error(err.response?.data?.message || 'Gagal menyelesaikan tugas'); setIsSubmitting(false); }
     };

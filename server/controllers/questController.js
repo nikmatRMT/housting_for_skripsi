@@ -203,6 +203,23 @@ exports.completeQuest = async (req, res) => {
             return res.status(400).json({ success: false, message: "PIN Salah! Silakan coba lagi." });
         }
 
+        // Validasi Lokasi (Geofencing) menggunakan Formula Haversine
+        const { latitude, longitude } = req.body;
+        if (latitude && longitude && quest.lokasi && quest.lokasi.coordinates) {
+            const workerCoords = [Number(longitude), Number(latitude)];
+            const questCoords = quest.lokasi.coordinates; // [lng, lat]
+            
+            const distanceInMeters = getHaversineDistance(workerCoords, questCoords);
+            const MAX_GEOFENCE_RADIUS_METERS = 100; // toleransi 100 meter
+
+            if (distanceInMeters > MAX_GEOFENCE_RADIUS_METERS) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Validasi Geofencing Gagal! Jarak Anda dengan titik lokasi tugas adalah ${Math.round(distanceInMeters)} meter. Anda wajib berada dalam radius ${MAX_GEOFENCE_RADIUS_METERS} meter dari titik lokasi tugas untuk memasukkan PIN penyelesaian.`
+                });
+            }
+        }
+
         quest.status = 'COMPLETED';
         quest.completed_at = new Date();
         await quest.save();
