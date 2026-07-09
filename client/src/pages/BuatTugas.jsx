@@ -88,6 +88,27 @@ export default function BuatTugas() {
         fetchUserProfile();
     }, []);
 
+    const getDistance = (coords1, coords2) => {
+        if (!coords1 || !coords2) return 0;
+        const lat1 = coords1[0];
+        const lon1 = coords1[1];
+        const lat2 = coords2[0];
+        const lon2 = coords2[1];
+
+        const R = 6371e3; // metres
+        const phi1 = lat1 * Math.PI/180;
+        const phi2 = lat2 * Math.PI/180;
+        const deltaPhi = (lat2-lat1) * Math.PI/180;
+        const deltaLambda = (lon2-lon1) * Math.PI/180;
+
+        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                Math.cos(phi1) * Math.cos(phi2) *
+                Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+        return R * c; // in metres
+    };
+
     const handleDapatkanLokasi = () => {
         setIsMemuatLokasi(true);
         getCurrentLocation(
@@ -332,6 +353,30 @@ export default function BuatTugas() {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* Bubble Rekomendasi Upah Berdasarkan Jarak Haversine */}
+                        {lokasiAsli && lokasi && getDistance(lokasiAsli, lokasi) > 10 && (
+                            <div style={{
+                                backgroundColor: 'var(--color-sandstone, #f7f4ed)',
+                                border: '2px solid var(--border-ink)',
+                                borderRadius: 'var(--radius-small, 12px)',
+                                padding: '12px 14px',
+                                marginBottom: '6px',
+                                fontSize: '12.5px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                color: 'var(--text-main)',
+                                lineHeight: '1.5',
+                                textAlign: 'left'
+                            }}>
+                                <span style={{ fontSize: '1.6rem' }}>💡</span>
+                                <div>
+                                    Jarak ke lokasi tugas: <strong>{getDistance(lokasiAsli, lokasi) >= 1000 ? `${(getDistance(lokasiAsli, lokasi) / 1000).toFixed(2)} KM` : `${Math.round(getDistance(lokasiAsli, lokasi))} meter`}</strong>. <br/>
+                                    Rekomendasi upah wajar: <strong>Rp {Math.max(3000, Math.round((3000 + getDistance(lokasiAsli, lokasi) * 5) / 500) * 500).toLocaleString('id-ID')}</strong> (Rp 3.000 tarif dasar + Rp 5/meter).
+                                </div>
+                            </div>
+                        )}
+
                         <label className="form-label">Upah Lelah Pekerja (Rp)</label>
                         <input type="number" value={upahJasa} onChange={(e) => setUpahJasa(e.target.value)} placeholder="Contoh: 5000" className="form-input" required id="buat-upah" />
                         {Number(upahJasa) > 0 && Number(upahJasa) < 2000 && (
