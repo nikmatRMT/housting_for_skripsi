@@ -2,6 +2,7 @@ import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { removeStorageItem } from '../utils/storageHelper';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -99,12 +100,12 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (!window.confirm("Yakin ingin keluar dari panel admin?")) return;
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRole');
-        localStorage.removeItem('myUserId');
-        localStorage.removeItem('guestMode');
+        await removeStorageItem('token');
+        await removeStorageItem('userRole');
+        await removeStorageItem('myUserId');
+        await removeStorageItem('guestMode');
         delete axios.defaults.headers.common.Authorization;
         navigate('/login');
     };
