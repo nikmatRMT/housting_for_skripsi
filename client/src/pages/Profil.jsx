@@ -38,12 +38,12 @@ export default function Profil() {
     useEffect(() => {
         if (isGuest) return;
         setIsLoading(true);
-        axios.get(`/api/users/profile/${MY_USER_ID}`)
+        axios.get(`/api/users/profile?user_id=${MY_USER_ID}`)
             .then(res => {
                 if (res.data.success) {
-                    setProfile(res.data.user);
-                    setEditName(res.data.user.nama_lengkap || '');
-                    setEditWA(res.data.user.no_whatsapp || '');
+                    setProfile(res.data.data);
+                    setEditName(res.data.data.nama_lengkap || '');
+                    setEditWA(res.data.data.no_whatsapp || '');
                 }
             })
             .catch(err => toast.error("Gagal memuat profil: " + err.response?.data?.message))
@@ -56,14 +56,15 @@ export default function Profil() {
             return toast.error("Nama dan Nomor WhatsApp tidak boleh kosong!");
         }
         setIsLoading(true);
-        axios.put(`/api/users/profile/${MY_USER_ID}`, {
+        axios.put('/api/users/profile', {
+            user_id: MY_USER_ID,
             nama_lengkap: editName,
             no_whatsapp: editWA
         })
             .then(res => {
                 if (res.data.success) {
                     toast.success("Profil berhasil diperbarui!");
-                    setProfile(res.data.user);
+                    setProfile(res.data.data);
                     setIsEditing(false);
                 }
             })
