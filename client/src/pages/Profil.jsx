@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import BottomNav from '../components/BottomNav';
 import { stopNativePollingService } from '../utils/notificationHelper';
+import { removeStorageItem } from '../utils/storageHelper';
 
 export default function Profil() {
     const navigate = useNavigate();
@@ -35,42 +36,49 @@ export default function Profil() {
     };
 
     useEffect(() => {
-        if (!isGuest) {
-            axios.get(`/api/users/profile?user_id=${MY_USER_ID}`)
-                .then(res => {
-                    if (res.data.success) {
-                        setProfile(res.data.data);
-                        setEditName(res.data.data.nama_lengkap);
-                        setEditWA(res.data.data.no_whatsapp);
-                    }
-                })
-                .catch(err => console.error("Gagal load profil:", err))
-                .finally(() => setIsLoading(false));
-        }
-    }, [isGuest, MY_USER_ID]);
-
-    const handleSaveProfile = () => {
+        if (isGuest) return;
         setIsLoading(true);
-        axios.put('/api/users/profile', { user_id: MY_USER_ID, nama_lengkap: editName, no_whatsapp: editWA })
+        axios.get(`/api/users/profile/${MY_USER_ID}`)
             .then(res => {
                 if (res.data.success) {
-                    setProfile(res.data.data);
+                    setProfile(res.data.user);
+                    setEditName(res.data.user.nama_lengkap || '');
+                    setEditWA(res.data.user.no_whatsapp || '');
+                }
+            })
+            .catch(err => toast.error("Gagal memuat profil: " + err.response?.data?.message))
+            .finally(() => setIsLoading(false));
+    }, [MY_USER_ID, isGuest]);
+
+    const handleUpdateProfile = (e) => {
+        e.preventDefault();
+        if (!editName.trim() || !editWA.trim()) {
+            return toast.error("Nama dan Nomor WhatsApp tidak boleh kosong!");
+        }
+        setIsLoading(true);
+        axios.put(`/api/users/profile/${MY_USER_ID}`, {
+            nama_lengkap: editName,
+            no_whatsapp: editWA
+        })
+            .then(res => {
+                if (res.data.success) {
+                    toast.success("Profil berhasil diperbarui!");
+                    setProfile(res.data.user);
                     setIsEditing(false);
-                    toast.error('Profil berhasil diperbarui!');
                 }
             })
             .catch(err => toast.error("Gagal memperbarui profil: " + err.response?.data?.message))
             .finally(() => setIsLoading(false));
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         if (window.confirm('Yakin ingin keluar?')) {
             // Matikan background polling service native jika ada
             stopNativePollingService().catch(() => {});
-            localStorage.removeItem('guestMode');
-            localStorage.removeItem('token');
-            localStorage.removeItem('myUserId');
-            localStorage.removeItem('userRole');
+            await removeStorageItem('guestMode');
+            await removeStorageItem('token');
+            await removeStorageItem('myUserId');
+            await removeStorageItem('userRole');
             navigate('/login');
         }
     };
