@@ -71,16 +71,20 @@ export default function Profil() {
             .finally(() => setIsLoading(false));
     };
 
-    const handleLogout = async () => {
-        if (window.confirm('Yakin ingin keluar?')) {
-            // Matikan background polling service native jika ada
-            stopNativePollingService().catch(() => {});
-            await removeStorageItem('guestMode');
-            await removeStorageItem('token');
-            await removeStorageItem('myUserId');
-            await removeStorageItem('userRole');
-            navigate('/login');
-        }
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+    const handleLogout = () => {
+        setShowLogoutModal(true);
+    };
+
+    const executeLogout = async () => {
+        // Matikan background polling service native jika ada
+        stopNativePollingService().catch(() => {});
+        await removeStorageItem('guestMode');
+        await removeStorageItem('token');
+        await removeStorageItem('myUserId');
+        await removeStorageItem('userRole');
+        navigate('/login');
     };
 
     return (
@@ -326,6 +330,38 @@ export default function Profil() {
                                     })}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal Konfirmasi Logout */}
+                {showLogoutModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+                    }}>
+                        <div className="clean-card" style={{
+                            backgroundColor: 'var(--surface)', width: '100%', maxWidth: '340px',
+                            padding: '24px', position: 'relative', textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🚪</div>
+                            <h2 style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '8px', color: 'var(--text-main)', letterSpacing: '-0.5px' }}>LOGOUT</h2>
+                            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: '1.5' }}>
+                                Apakah Anda yakin ingin keluar dari akun Jasa Warga Anda?
+                            </p>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button onClick={() => setShowLogoutModal(false)} className="btn" style={{
+                                    flex: 1, backgroundColor: 'var(--bg-main)', border: '2px solid var(--border-ink)', margin: 0
+                                }}>
+                                    BATAL
+                                </button>
+                                <button onClick={executeLogout} className="btn" style={{
+                                    flex: 1, backgroundColor: 'var(--accent-coral)', color: 'white', border: '2px solid var(--border-ink)', margin: 0, boxShadow: '2px 2px 0px var(--border-ink)'
+                                }}>
+                                    KELUAR
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
