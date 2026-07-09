@@ -44,7 +44,7 @@ async function seedDatabase() {
             _id: new mongoose.Types.ObjectId('60b5c1c8a1b2c3d4e5f60003'),
             nama_lengkap: 'Admin Jasa Warga',
             email: 'admin@email.com',
-            no_whatsapp: '6289999999999',
+            no_whatsapp: '6281250066701',
             password: hashedPassword,
             role: 'admin'
         });

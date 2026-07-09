@@ -73,7 +73,7 @@ export default function LandingLogin() {
         e.preventDefault();
         if (!forgotEmail) return;
         
-        const adminWhatsapp = '6289999999999'; 
+        const adminWhatsapp = '6281250066701'; 
         const messageText = `Halo Admin Jasa Warga, saya lupa password untuk akun dengan email: ${forgotEmail}. Mohon bantuan untuk melakukan reset password.`;
         const waUrl = `https://wa.me/${adminWhatsapp}?text=${encodeURIComponent(messageText)}`;
         
