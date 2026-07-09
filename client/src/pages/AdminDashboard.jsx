@@ -99,6 +99,16 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleLogout = () => {
+        if (!window.confirm("Yakin ingin keluar dari panel admin?")) return;
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('myUserId');
+        localStorage.removeItem('guestMode');
+        delete axios.defaults.headers.common.Authorization;
+        navigate('/login');
+    };
+
     // Filter Pengguna berdasarkan pencarian
     const filteredUsers = users.filter(u => 
         u.nama_lengkap.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -568,7 +578,7 @@ export default function AdminDashboard() {
                 </nav>
 
                 <div style={{ padding: '20px 24px', borderTop: '2px solid var(--color-ink-black)' }}>
-                    <a href="#" onClick={(e) => {e.preventDefault(); navigate('/');}} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Logout
                     </a>
                 </div>
