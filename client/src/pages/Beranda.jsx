@@ -383,14 +383,6 @@ export default function Beranda() {
     const kalori = Math.round((stats.kaloriToday || 0) + sensorCalories);
     const distanceTodayKm = (stats.distanceTodayKm + (sensorSteps * 0.00075)).toFixed(2);
 
-    const handleTestNotification = async () => {
-        await requestNotificationPermission();
-        await showNotification(
-            "🔔 Test Notifikasi Berhasil!",
-            "Notifikasi berfungsi dengan baik di perangkat ini."
-        );
-        toast.success("Notifikasi test dikirim! Cek panel notifikasi HP Anda.");
-    };
 
     return (
         <>
@@ -408,18 +400,6 @@ export default function Beranda() {
                         <p style={{ fontSize: '13px' }}>Filter Radius: Maks 1 km</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        {/* Tombol Test Notifikasi */}
-                        <button
-                            onClick={handleTestNotification}
-                            title="Test Notifikasi"
-                            style={{
-                                background: 'var(--accent-yellow, #fde68a)', border: '2px solid var(--border-ink)',
-                                borderRadius: '50px', width: '40px', height: '40px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '18px'
-                            }}>
-                            🔔
-                        </button>
                         <button style={{
                             background: 'var(--accent-green)', border: '2px solid var(--border-ink)',
                             borderRadius: '50px', width: '40px', height: '40px', cursor: 'pointer',
