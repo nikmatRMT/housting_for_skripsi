@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     const [questFilter, setQuestFilter] = useState('ALL'); // 'ALL', 'OPEN', 'TAKEN', 'COMPLETED', 'CANCELED'
     const [selectedReport, setSelectedReport] = useState(null); // 'users', 'completed', 'canceled', 'turnover'
     const [isLoading, setIsLoading] = useState(true);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const fetchAdminData = async () => {
         try {
@@ -100,8 +101,11 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleLogout = async () => {
-        if (!window.confirm("Yakin ingin keluar dari panel admin?")) return;
+    const handleLogoutClick = () => {
+        setShowLogoutModal(true);
+    };
+
+    const executeLogout = async () => {
         await removeStorageItem('token');
         await removeStorageItem('userRole');
         await removeStorageItem('myUserId');
@@ -579,7 +583,7 @@ export default function AdminDashboard() {
                 </nav>
 
                 <div style={{ padding: '20px 24px', borderTop: '2px solid var(--color-ink-black)' }}>
-                    <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleLogoutClick(); }} style={{ color: 'var(--text-muted)', textDecoration: 'none', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         Logout
                     </a>
                 </div>
@@ -1004,6 +1008,39 @@ export default function AdminDashboard() {
 
                 </div>
             </main>
+
+            {/* Modal Konfirmasi Logout Admin */}
+            {showLogoutModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+                }}>
+                    <div className="clean-card" style={{
+                        backgroundColor: 'var(--color-pure-white)', width: '100%', maxWidth: '340px',
+                        padding: '24px', position: 'relative', textAlign: 'center', border: '3px solid var(--color-ink-black)',
+                        boxShadow: 'var(--shadow-card, 6px 6px 0px #000)'
+                    }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🚪</div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '8px', color: 'var(--color-ink-black)', fontFamily: 'var(--font-outfit)' }}>KELUAR ADMIN</h2>
+                        <p style={{ fontSize: '13.5px', color: 'var(--color-stone-gray)', marginBottom: '20px', lineHeight: '1.5', fontFamily: 'var(--font-inter)' }}>
+                            Apakah Anda yakin ingin keluar dari panel administrator Jasa Warga?
+                        </p>
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={() => setShowLogoutModal(false)} style={{
+                                flex: 1, backgroundColor: 'var(--color-pure-white)', border: '2px solid var(--color-ink-black)', margin: 0, padding: '10px', fontWeight: '700', cursor: 'pointer', borderRadius: '50px'
+                            }}>
+                                BATAL
+                            </button>
+                            <button onClick={executeLogout} style={{
+                                flex: 1, backgroundColor: 'var(--color-coral-pop, #ff705d)', color: 'white', border: '2px solid var(--color-ink-black)', margin: 0, padding: '10px', fontWeight: '700', cursor: 'pointer', borderRadius: '50px', boxShadow: '2px 2px 0px var(--color-ink-black)'
+                            }}>
+                                KELUAR
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
