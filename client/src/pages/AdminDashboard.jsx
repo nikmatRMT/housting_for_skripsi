@@ -413,7 +413,7 @@ export default function AdminDashboard() {
     const printStyles = `
     @media print {
         @page {
-            margin: 15mm 15mm 15mm 15mm;
+            margin: 10mm 12mm 10mm 12mm;
         }
         body {
             background-color: white !important;
@@ -433,10 +433,13 @@ export default function AdminDashboard() {
         .report-container {
             border: none !important;
             box-shadow: none !important;
-            padding: 0 !important;
+            padding: 16px 20px !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+        }
+        table th, table td {
+            padding: 6px 8px !important;
         }
         tr {
             page-break-inside: avoid !important;
@@ -505,6 +508,16 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
+                    {/* Ringkasan Data Laporan */}
+                    <div className="summary-block" style={{ border: '1px solid #CBD5E1', padding: '12px 20px', backgroundColor: '#F8FAFC', fontSize: '0.8rem', marginBottom: '24px', borderRadius: '6px' }}>
+                        <p style={{ fontWeight: 'bold', color: '#1E3A8A', marginBottom: '6px', fontSize: '0.85rem' }}>Ringkasan Data:</p>
+                        <div style={{ display: 'flex', gap: '48px' }}>
+                            {reportData.summaries.map((s, i) => (
+                                <p key={i} style={{ margin: 0 }}>{s.label}: <span style={{ fontWeight: '700', color: '#0F172A' }}>{s.value}</span></p>
+                            ))}
+                        </div>
+                    </div>
+
                     {/* Tabel Laporan */}
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', marginBottom: '28px' }}>
                         <thead>
@@ -533,22 +546,12 @@ export default function AdminDashboard() {
                         </tbody>
                     </table>
 
-                    {/* Ringkasan Data Laporan */}
-                    <div className="summary-block" style={{ border: '1px solid #CBD5E1', padding: '16px 20px', backgroundColor: '#F8FAFC', fontSize: '0.8rem', marginBottom: '40px', borderRadius: '6px' }}>
-                        <p style={{ fontWeight: 'bold', color: '#1E3A8A', marginBottom: '8px', fontSize: '0.85rem' }}>Ringkasan Data:</p>
-                        <div style={{ display: 'flex', gap: '48px' }}>
-                            {reportData.summaries.map((s, i) => (
-                                <p key={i} style={{ margin: 0 }}>{s.label}: <span style={{ fontWeight: '700', color: '#0F172A' }}>{s.value}</span></p>
-                            ))}
-                        </div>
-                    </div>
-
                     {/* Tanda Tangan Laporan */}
                     <div className="signature-block" style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.8rem', color: '#0F172A' }}>
                         <div style={{ textAlign: 'center', width: '220px' }}>
                             <p style={{ margin: 0 }}>Banjarmasin, {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             <p style={{ fontWeight: '700', margin: '4px 0 0 0' }}>Administrator</p>
-                            <div style={{ borderBottom: '1.5px solid #000', width: '100%', marginTop: '72px', marginBottom: '4px' }}></div>
+                            <div style={{ borderBottom: '1.5px solid #000', width: '100%', marginTop: '48px', marginBottom: '4px' }}></div>
                             <p style={{ fontWeight: '700', margin: 0 }}>{adminName}</p>
                             {adminName.toLowerCase().includes('nikmat') && (
                                 <p style={{ fontSize: '0.7rem', color: '#64748B', margin: 0 }}>NIM. 2210020047</p>
