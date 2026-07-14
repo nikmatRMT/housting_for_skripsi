@@ -5,6 +5,7 @@ import axios from 'axios';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import BottomNav from '../components/BottomNav';
+import Logo from '../components/Logo';
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
@@ -401,18 +402,7 @@ export default function Beranda() {
                         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Filter Radius: Maks {searchRadius >= 1000 ? `${searchRadius / 1000} km` : `${searchRadius} m`}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <button 
-                            onClick={() => setShowFilter(!showFilter)}
-                            style={{
-                                background: 'var(--accent-green)', border: '2px solid var(--border-ink)',
-                                borderRadius: '50px', width: '40px', height: '40px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                        >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-main)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" />
-                            </svg>
-                        </button>
+                        <Logo size={36} />
                     </div>
                 </header>
 
@@ -614,40 +604,38 @@ export default function Beranda() {
 
                     {/* ── Daftar Tugas Tersedia ──────────────── */}
 
-                    {showFilter && (
-                        <div className="clean-card" style={{ padding: '16px 20px', marginBottom: '16px', backgroundColor: 'var(--surface)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m16.2 7.8-2 2-2 2-2 2" /><circle cx="12" cy="12" r="1" /></svg>
-                                    RADIUS PENCARIAN
-                                </span>
-                                <span style={{ fontWeight: '800', fontSize: '0.95rem', color: 'var(--accent-coral)' }}>{searchRadius >= 1000 ? `${(searchRadius / 1000).toFixed(1)} KM` : `${searchRadius} meter`}</span>
-                            </div>
-                            <input
-                                type="range"
-                                min="500"
-                                max="5000"
-                                step="500"
-                                value={searchRadius}
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setSearchRadius(val);
-                                    if (lastLoc) fetchQuests(lastLoc.lat, lastLoc.lng, val);
-                                }}
-                                style={{
-                                    width: '100%',
-                                    cursor: 'pointer',
-                                    accentColor: 'var(--accent-coral)'
-                                }}
-                            />
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
-                                <span>500m</span>
-                                <span>1 KM</span>
-                                <span>2.5 KM</span>
-                                <span>5 KM</span>
-                            </div>
+                    <div className="clean-card" style={{ padding: '16px 20px', marginBottom: '16px', backgroundColor: 'var(--surface)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m16.2 7.8-2 2-2 2-2 2" /><circle cx="12" cy="12" r="1" /></svg>
+                                RADIUS PENCARIAN
+                            </span>
+                            <span style={{ fontWeight: '800', fontSize: '0.95rem', color: 'var(--accent-coral)' }}>{searchRadius >= 1000 ? `${(searchRadius / 1000).toFixed(1)} KM` : `${searchRadius} meter`}</span>
                         </div>
-                    )}
+                        <input
+                            type="range"
+                            min="500"
+                            max="5000"
+                            step="500"
+                            value={searchRadius}
+                            onChange={(e) => {
+                                const val = Number(e.target.value);
+                                setSearchRadius(val);
+                                if (lastLoc) fetchQuests(lastLoc.lat, lastLoc.lng, val);
+                            }}
+                            style={{
+                                width: '100%',
+                                cursor: 'pointer',
+                                accentColor: 'var(--accent-coral)'
+                            }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
+                            <span>500m</span>
+                            <span>1 KM</span>
+                            <span>2.5 KM</span>
+                            <span>5 KM</span>
+                        </div>
+                    </div>
 
                     <div style={{ marginTop: '12px' }}>
                         {isLoading ? (
