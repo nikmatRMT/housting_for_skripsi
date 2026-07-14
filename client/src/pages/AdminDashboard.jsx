@@ -532,8 +532,10 @@ export default function AdminDashboard() {
                             <p style={{ margin: 0 }}>Banjarmasin, {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             <p style={{ fontWeight: '700', margin: '4px 0 0 0' }}>Administrator</p>
                             <div style={{ borderBottom: '1.5px solid #000', width: '100%', marginTop: '72px', marginBottom: '4px' }}></div>
-                            <p style={{ fontWeight: '700', margin: 0 }}>nikmatRMT</p>
-                            <p style={{ fontSize: '0.7rem', color: '#64748B', margin: 0 }}>NIM. 2210020047</p>
+                            <p style={{ fontWeight: '700', margin: 0 }}>{adminName}</p>
+                            {adminName.toLowerCase().includes('nikmat') && (
+                                <p style={{ fontSize: '0.7rem', color: '#64748B', margin: 0 }}>NIM. 2210020047</p>
+                            )}
                         </div>
                     </div>
                 </div>
