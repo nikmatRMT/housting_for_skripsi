@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { removeStorageItem } from '../utils/storageHelper';
+import Logo from '../components/Logo';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
@@ -538,9 +539,12 @@ export default function AdminDashboard() {
             
             {/* Sidebar */}
             <aside style={{ width: '260px', backgroundColor: 'var(--color-pure-white)', borderRight: '2px solid var(--color-ink-black)', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '24px', borderBottom: '2px solid var(--color-ink-black)' }}>
-                    <h2 style={{ fontSize: '1.2rem', color: 'var(--color-ink-black)', fontWeight: '800' }}>ADMINISTRATOR</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--color-stone-gray)' }}>Micro-Tasking Panel</p>
+                <div style={{ padding: '20px 24px', borderBottom: '2px solid var(--color-ink-black)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Logo size={44} hasShadow={false} />
+                    <div>
+                        <h2 style={{ fontSize: '1.2rem', color: 'var(--color-ink-black)', fontWeight: '800', lineHeight: 1.1 }}>JAWARGA</h2>
+                        <p style={{ fontSize: '0.72rem', color: 'var(--color-stone-gray)', marginTop: '2px', fontWeight: '500' }}>Map Your Work & Tasks</p>
+                    </div>
                 </div>
                 
                 <nav style={{ padding: '20px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -641,9 +645,23 @@ export default function AdminDashboard() {
                     {activeTab === 'dashboard' && (
                         <div className="fade-up">
                             {/* Greeting Banner */}
-                            <div className="clean-card" style={{ marginBottom: '32px', background: 'var(--color-ink-black)', color: '#fff', border: '2px solid var(--color-ink-black)' }}>
-                                <h1 style={{ color: 'var(--color-pure-white)', fontSize: '1.8rem', marginBottom: '8px' }}>Selamat Datang Kembali, Admin nikmatRMT!</h1>
-                                <p style={{ color: 'var(--color-cream-paper)', fontSize: '0.95rem', opacity: 0.9 }}>Pantau transaksi harian, amankan transaksi, kelola pengguna yang bermasalah, dan cetak berkas laporan dengan mudah.</p>
+                            <div className="clean-card" style={{ 
+                                marginBottom: '32px', 
+                                background: 'var(--color-ink-black)', 
+                                color: '#fff', 
+                                border: '2px solid var(--color-ink-black)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '20px',
+                                padding: '24px 32px'
+                            }}>
+                                <Logo size={64} hasShadow={false} rounded={true} />
+                                <div>
+                                    <h1 style={{ color: 'var(--color-pure-white)', fontSize: '1.7rem', marginBottom: '6px' }}>Selamat Datang Kembali, Admin nikmatRMT!</h1>
+                                    <p style={{ color: 'var(--color-cream-paper)', fontSize: '0.92rem', opacity: 0.9, lineHeight: 1.5 }}>
+                                        JAWARGA (Map Your Work & Tasks) — Sistem informasi gotong royong, pemantauan penugasan mikro, verifikasi geofencing GPS kelurahan, dan transaksi kemasyarakatan Kelurahan Guntung Paikat.
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Stat Cards Grid */}
