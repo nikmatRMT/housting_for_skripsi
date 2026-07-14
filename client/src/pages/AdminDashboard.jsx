@@ -412,6 +412,9 @@ export default function AdminDashboard() {
 
     const printStyles = `
     @media print {
+        @page {
+            margin: 15mm 15mm 15mm 15mm;
+        }
         body {
             background-color: white !important;
             color: black !important;
@@ -434,6 +437,18 @@ export default function AdminDashboard() {
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
+        }
+        tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .signature-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+        .summary-block {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
         }
     }
     `;
@@ -466,7 +481,9 @@ export default function AdminDashboard() {
                     {/* Kop Surat Resmi */}
                     <div style={{ borderBottom: '3px double #000', paddingBottom: '16px', marginBottom: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div style={{ width: '64px', height: '64px', border: '3px solid #1E3A8A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '1.2rem', color: '#1E3A8A', borderRadius: '8px' }}>M</div>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <Logo size={56} hasShadow={false} />
+                            </div>
                             <div style={{ textAlign: 'center', flex: 1, padding: '0 20px' }}>
                                 <p style={{ fontSize: '0.8rem', letterSpacing: '3px', color: '#1E3A8A', margin: 0, fontWeight: '800' }}>APLIKASI MICRO-TASKING HYPER-LOCAL</p>
                                 <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: '4px 0', color: '#0F172A', letterSpacing: '0.5px' }}>{reportData.title}</h1>
@@ -484,7 +501,7 @@ export default function AdminDashboard() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <p style={{ margin: '4px 0' }}><span style={{ fontWeight: '600' }}>Tanggal Cetak:</span> {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                            <p style={{ margin: '4px 0' }}><span style={{ fontWeight: '600' }}>Dicetak Oleh:</span> Administrator (nikmatRMT)</p>
+                            <p style={{ margin: '4px 0' }}><span style={{ fontWeight: '600' }}>Dicetak Oleh:</span> {adminName === 'Admin' ? 'Administrator' : `Administrator (${adminName})`}</p>
                         </div>
                     </div>
 
@@ -517,7 +534,7 @@ export default function AdminDashboard() {
                     </table>
 
                     {/* Ringkasan Data Laporan */}
-                    <div style={{ border: '1px solid #CBD5E1', padding: '16px 20px', backgroundColor: '#F8FAFC', fontSize: '0.8rem', marginBottom: '40px', borderRadius: '6px' }}>
+                    <div className="summary-block" style={{ border: '1px solid #CBD5E1', padding: '16px 20px', backgroundColor: '#F8FAFC', fontSize: '0.8rem', marginBottom: '40px', borderRadius: '6px' }}>
                         <p style={{ fontWeight: 'bold', color: '#1E3A8A', marginBottom: '8px', fontSize: '0.85rem' }}>Ringkasan Data:</p>
                         <div style={{ display: 'flex', gap: '48px' }}>
                             {reportData.summaries.map((s, i) => (
@@ -527,7 +544,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Tanda Tangan Laporan */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.8rem', color: '#0F172A' }}>
+                    <div className="signature-block" style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '0.8rem', color: '#0F172A' }}>
                         <div style={{ textAlign: 'center', width: '220px' }}>
                             <p style={{ margin: 0 }}>Banjarmasin, {new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                             <p style={{ fontWeight: '700', margin: '4px 0 0 0' }}>Administrator</p>
