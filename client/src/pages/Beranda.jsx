@@ -402,7 +402,7 @@ export default function Beranda() {
                         <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Filter Radius: Maks {searchRadius >= 1000 ? `${searchRadius / 1000} km` : `${searchRadius} m`}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <Logo size={36} />
+                        <Logo size={44} hasShadow={false} rounded={true} />
                     </div>
                 </header>
 
