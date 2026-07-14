@@ -553,7 +553,7 @@ export default function AdminDashboard() {
                             <p style={{ fontWeight: '700', margin: '4px 0 0 0' }}>Administrator</p>
                             <div style={{ borderBottom: '1.5px solid #000', width: '100%', marginTop: '48px', marginBottom: '4px' }}></div>
                             <p style={{ fontWeight: '700', margin: 0 }}>{adminName}</p>
-                            {adminName.toLowerCase().includes('nikmat') && (
+                            {(adminName.toLowerCase().includes('nikmat') || adminName.toLowerCase().includes('rahmat') || adminName.toLowerCase().includes('rey')) && (
                                 <p style={{ fontSize: '0.7rem', color: '#64748B', margin: 0 }}>NIM. 2210020047</p>
                             )}
                         </div>

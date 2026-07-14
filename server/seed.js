@@ -39,17 +39,27 @@ async function seedDatabase() {
             password: hashedPassword
         });
 
-        // 3. Membuat data Admin
-        const admin = await User.create({
+        // 3. Membuat data Admin 1: Rahmat
+        const adminRahmat = await User.create({
             _id: new mongoose.Types.ObjectId('60b5c1c8a1b2c3d4e5f60003'),
-            nama_lengkap: 'Admin Jasa Warga',
-            email: 'admin@email.com',
+            nama_lengkap: 'rahmat',
+            email: 'rahmat@email.com',
             no_whatsapp: '6281250066701',
             password: hashedPassword,
             role: 'admin'
         });
+
+        // 4. Membuat data Admin 2: Rey
+        const adminRey = await User.create({
+            _id: new mongoose.Types.ObjectId('60b5c1c8a1b2c3d4e5f60004'),
+            nama_lengkap: 'rey',
+            email: 'rey@email.com',
+            no_whatsapp: '6281250066702',
+            password: hashedPassword,
+            role: 'admin'
+        });
         
-        console.log('✅ Data User (termasuk Admin) berhasil dibuat!');
+        console.log('✅ Dua Akun Admin (rahmat & rey) berhasil dibuat!');
 
         // Koordinat Guntung Paikat (Estimasi contoh: Banjarbaru)
         // Koordinat Klien
