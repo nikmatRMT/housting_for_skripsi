@@ -51,6 +51,7 @@ export default function LandingLogin() {
                 await saveStorageItem('token', res.data.token);
                 await saveStorageItem('myUserId', res.data.user.id);
                 await saveStorageItem('userRole', res.data.user.role);
+                await saveStorageItem('userName', res.data.user.nama_lengkap);
 
                 // Set default authorization header untuk request selanjutnya
                 axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;

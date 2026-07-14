@@ -17,6 +17,8 @@ export default function AdminDashboard() {
     const [selectedReport, setSelectedReport] = useState(null); // 'users', 'completed', 'canceled', 'turnover'
     const [isLoading, setIsLoading] = useState(true);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const MY_USER_ID = localStorage.getItem('myUserId');
+    const [adminName, setAdminName] = useState(localStorage.getItem('userName') || 'Admin');
 
     const fetchAdminData = async () => {
         try {
@@ -28,6 +30,11 @@ export default function AdminDashboard() {
             const usersRes = await axios.get('/api/admin/users');
             if (usersRes.data.success) {
                 setUsers(usersRes.data.data);
+                const currentAdmin = usersRes.data.data.find(u => u._id === MY_USER_ID);
+                if (currentAdmin) {
+                    setAdminName(currentAdmin.nama_lengkap);
+                    localStorage.setItem('userName', currentAdmin.nama_lengkap);
+                }
             }
 
             const questsRes = await axios.get('/api/admin/quests');
@@ -657,7 +664,7 @@ export default function AdminDashboard() {
                             }}>
                                 <Logo size={64} hasShadow={false} rounded={true} />
                                 <div>
-                                    <h1 style={{ color: 'var(--color-pure-white)', fontSize: '1.7rem', marginBottom: '6px' }}>Selamat Datang Kembali, Admin nikmatRMT!</h1>
+                                    <h1 style={{ color: 'var(--color-pure-white)', fontSize: '1.7rem', marginBottom: '6px' }}>Selamat Datang Kembali, Admin {adminName}!</h1>
                                     <p style={{ color: 'var(--color-cream-paper)', fontSize: '0.92rem', opacity: 0.9, lineHeight: 1.5 }}>
                                         JAWARGA (Map Your Work & Tasks) — Sistem informasi gotong royong, pemantauan penugasan mikro, verifikasi geofencing GPS kelurahan, dan transaksi kemasyarakatan Kelurahan Guntung Paikat.
                                     </p>
