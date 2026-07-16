@@ -64,6 +64,54 @@ export default function Beranda() {
     const prevQuestsRef = useRef(null);
     const [lastLoc, setLastLoc] = useState(null);
 
+    // Swipe-down to dismiss modal (Bottom Sheet gesture)
+    const [translateY, setTranslateY] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+    const touchStartY = useRef(0);
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        if (!selectedQuest) {
+            setTranslateY(0);
+            setIsDragging(false);
+        }
+    }, [selectedQuest]);
+
+    const handleTouchStart = (e) => {
+        if (e.target.closest('.leaflet-container') || e.target.closest('button')) {
+            return;
+        }
+        const modal = modalRef.current;
+        if (!modal) return;
+        
+        if (modal.scrollTop <= 0) {
+            touchStartY.current = e.touches[0].clientY;
+            setIsDragging(true);
+        }
+    };
+
+    const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        const currentY = e.touches[0].clientY;
+        const diffY = currentY - touchStartY.current;
+        
+        if (diffY > 0) {
+            if (e.cancelable) e.preventDefault();
+            setTranslateY(diffY);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        if (translateY > 120) {
+            setSelectedQuest(null);
+            setTransportMode('walk');
+        } else {
+            setTranslateY(0);
+        }
+    };
+
     const getTodayKey = () => {
         const now = new Date();
         return now.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
@@ -614,9 +662,9 @@ export default function Beranda() {
                         </div>
                         <input
                             type="range"
-                            min="500"
+                            min="1"
                             max="5000"
-                            step="500"
+                            step="1"
                             value={searchRadius}
                             onChange={(e) => {
                                 const val = Number(e.target.value);
@@ -630,7 +678,7 @@ export default function Beranda() {
                             }}
                         />
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
-                            <span>500m</span>
+                            <span>1m</span>
                             <span>1 KM</span>
                             <span>2.5 KM</span>
                             <span>5 KM</span>
@@ -709,124 +757,144 @@ export default function Beranda() {
 
                 </div>
 
-                {/* ── MODAL DETAIL TUGAS ────────────────────── */}
-                {selectedQuest && (
-                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(44,46,42,0.6)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                        <div className="clean-card fade-up" style={{ padding: '24px', width: '100%', maxWidth: '400px', maxHeight: '90vh', overflowY: 'auto' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                <h3 style={{ margin: 0, fontSize: '1.15rem', textTransform: 'uppercase' }}>{selectedQuest.kategori}</h3>
-                                <button onClick={() => setSelectedQuest(null)} style={{ background: 'var(--bg-main)', border: '2px solid var(--border-ink)', borderRadius: '50px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)' }}>&times;</button>
-                            </div>
+            </div>
 
-                            {/* Map */}
-                            <div style={{ height: '170px', backgroundColor: 'var(--bg-main)', border: '2px solid var(--border-ink)', borderRadius: 'var(--radius-medium)', marginBottom: '16px', overflow: 'hidden' }}>
-                                <MapContainer
-                                    center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]}
-                                    zoom={16}
-                                    style={{ height: '100%', width: '100%' }}
-                                    zoomControl={false}
-                                    dragging={false}
-                                    touchZoom={false}
-                                    doubleClickZoom={false}
-                                    scrollWheelZoom={false}
-                                    boxZoom={false}
-                                    keyboard={false}
-                                >
-                                    <MapResizeHandler center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
-                                    <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                    <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} icon={customIcon} />
-                                </MapContainer>
-                            </div>
+            {/* ── MODAL DETAIL TUGAS ────────────────────── */}
+            {selectedQuest && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(44,46,42,0.6)', zIndex: 999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '20px' }}>
+                    <div 
+                        ref={modalRef}
+                        className="clean-card fade-up" 
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        style={{ 
+                            padding: '12px 24px 24px', 
+                            width: '100%', 
+                            maxWidth: '400px', 
+                            maxHeight: '80vh', 
+                            overflowY: 'auto',
+                            transform: `translateY(${translateY}px)`,
+                            transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                        }}
+                    >
+                        {/* Drag Handle */}
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                            <div style={{ width: '40px', height: '4px', backgroundColor: 'var(--border-ink, #2c2e2a)', borderRadius: '2px', opacity: 0.25 }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <h3 style={{ margin: 0, fontSize: '1.15rem', textTransform: 'uppercase' }}>{selectedQuest.kategori}</h3>
+                            <button onClick={() => setSelectedQuest(null)} style={{ background: 'var(--bg-main)', border: '2px solid var(--border-ink)', borderRadius: '50px', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)' }}>&times;</button>
+                        </div>
 
-                            <p style={{ color: 'var(--text-main)', fontSize: '14px', marginBottom: '16px', lineHeight: '1.55' }}>{selectedQuest.deskripsi}</p>
+                        {/* Map */}
+                        <div style={{ height: '170px', backgroundColor: 'var(--bg-main)', border: '2px solid var(--border-ink)', borderRadius: 'var(--radius-medium)', marginBottom: '16px', overflow: 'hidden' }}>
+                            <MapContainer
+                                center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]}
+                                zoom={16}
+                                style={{ height: '100%', width: '100%' }}
+                                zoomControl={false}
+                                dragging={true}
+                                touchZoom={true}
+                                doubleClickZoom={true}
+                                scrollWheelZoom={true}
+                                boxZoom={true}
+                                keyboard={true}
+                            >
+                                <MapResizeHandler center={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} />
+                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                <Marker position={[selectedQuest.lokasi.coordinates[1], selectedQuest.lokasi.coordinates[0]]} icon={customIcon} />
+                            </MapContainer>
+                        </div>
 
-                            {/* Pricing */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '2px dashed var(--border-ink)', paddingBottom: '8px' }}>
-                                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Upah Lelah</span>
-                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-main)' }}>Rp {selectedQuest.upah_jasa.toLocaleString('id-ID')}</span>
+                        <p style={{ color: 'var(--text-main)', fontSize: '14px', marginBottom: '16px', lineHeight: '1.55' }}>{selectedQuest.deskripsi}</p>
+
+                        {/* Pricing */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '2px dashed var(--border-ink)', paddingBottom: '8px' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Upah Lelah</span>
+                            <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-main)' }}>Rp {selectedQuest.upah_jasa.toLocaleString('id-ID')}</span>
+                        </div>
+                        {selectedQuest.nominal_talangan > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '2px dashed var(--border-ink)', paddingBottom: '8px' }}>
+                                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Dana Talangan</span>
+                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--accent-coral)' }}>Rp {selectedQuest.nominal_talangan.toLocaleString('id-ID')}</span>
                             </div>
-                            {selectedQuest.nominal_talangan > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '2px dashed var(--border-ink)', paddingBottom: '8px' }}>
-                                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Dana Talangan</span>
-                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--accent-coral)' }}>Rp {selectedQuest.nominal_talangan.toLocaleString('id-ID')}</span>
+                        )}
+
+                        {/* Info Pembayaran */}
+                        <div className="info-box" style={{ marginBottom: '20px', borderRadius: 'var(--radius-medium)' }}>
+                            <p style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>⚠️</span> INFORMASI PEMBAYARAN
+                            </p>
+                            <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                                Pembayaran bersifat <strong>TUNAI / C.O.D</strong> saat bertatap muka. Pembayaran menggunakan QRIS, E-Wallet, atau kesepakatan bonus tambahan adalah murni <strong>urusan privat</strong> di luar tanggung jawab aplikasi. <br /><br /><strong>Catatan:</strong> Jika uang yang diberikan lebih besar, sistem hanya akan mencatat riwayat upah sesuai nominal yang tercantum di aplikasi ini.
+                            </p>
+                        </div>
+
+                        {/* Pilihan Transportasi */}
+                        {!isGuest && (
+                            <div style={{ marginBottom: '20px' }}>
+                                <span className="section-label" style={{ marginBottom: '8px' }}>MODE TRANSPORTASI KE LOKASI</span>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransportMode('walk')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            border: '2px solid var(--border-ink)',
+                                            backgroundColor: transportMode === 'walk' ? 'var(--accent-green)' : 'var(--surface)',
+                                            color: 'var(--text-main)',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            boxShadow: transportMode === 'walk' ? '2px 2px 0px var(--border-ink)' : 'none'
+                                        }}
+                                    >
+                                        🚶 Jalan Kaki
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransportMode('motorcycle')}
+                                        style={{
+                                            flex: 1,
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            border: '2px solid var(--border-ink)',
+                                            backgroundColor: transportMode === 'motorcycle' ? 'var(--accent-coral)' : 'var(--surface)',
+                                            color: 'var(--text-main)',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            boxShadow: transportMode === 'motorcycle' ? '2px 2px 0px var(--border-ink)' : 'none'
+                                        }}
+                                    >
+                                        🏍️ Sepeda Motor
+                                    </button>
                                 </div>
-                            )}
-
-                            {/* Info Pembayaran */}
-                            <div className="info-box" style={{ marginBottom: '20px', borderRadius: 'var(--radius-medium)' }}>
-                                <p style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: '600', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span>⚠️</span> INFORMASI PEMBAYARAN
-                                </p>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                                    Pembayaran bersifat <strong>TUNAI / C.O.D</strong> saat bertatap muka. Pembayaran menggunakan QRIS, E-Wallet, atau kesepakatan bonus tambahan adalah murni <strong>urusan privat</strong> di luar tanggung jawab aplikasi. <br /><br /><strong>Catatan:</strong> Jika uang yang diberikan lebih besar, sistem hanya akan mencatat riwayat upah sesuai nominal yang tercantum di aplikasi ini.
-                                </p>
                             </div>
+                        )}
 
-                            {/* Pilihan Transportasi */}
-                            {!isGuest && (
-                                <div style={{ marginBottom: '20px' }}>
-                                    <span className="section-label" style={{ marginBottom: '8px' }}>MODE TRANSPORTASI KE LOKASI</span>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setTransportMode('walk')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px',
-                                                borderRadius: '8px',
-                                                border: '2px solid var(--border-ink)',
-                                                backgroundColor: transportMode === 'walk' ? 'var(--accent-green)' : 'var(--surface)',
-                                                color: 'var(--text-main)',
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                boxShadow: transportMode === 'walk' ? '2px 2px 0px var(--border-ink)' : 'none'
-                                            }}
-                                        >
-                                            🚶 Jalan Kaki
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setTransportMode('motorcycle')}
-                                            style={{
-                                                flex: 1,
-                                                padding: '10px',
-                                                borderRadius: '8px',
-                                                border: '2px solid var(--border-ink)',
-                                                backgroundColor: transportMode === 'motorcycle' ? 'var(--accent-coral)' : 'var(--surface)',
-                                                color: 'var(--text-main)',
-                                                fontWeight: 'bold',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                                boxShadow: transportMode === 'motorcycle' ? '2px 2px 0px var(--border-ink)' : 'none'
-                                            }}
-                                        >
-                                            🏍️ Sepeda Motor
-                                        </button>
-                                    </div>
-                                </div>
+                        {/* Action Buttons */}
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button onClick={() => { setSelectedQuest(null); setTransportMode('walk'); }} className="btn btn-outline" style={{ flex: 1 }}>BATAL</button>
+                            {isGuest ? (
+                                <button onClick={() => { toast.error('Anda harus Login/Daftar akun sungguhan untuk bisa mengambil tugas dan mendapatkan uang!'); navigate('/login'); }} className="btn btn-green" style={{ flex: 1 }}>LOGIN UNTUK AMBIL</button>
+                            ) : (
+                                <button onClick={() => handleTakeQuest(selectedQuest._id)} className="btn btn-primary" style={{ flex: 1 }}>AMBIL TUGAS</button>
                             )}
-
-                            {/* Action Buttons */}
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button onClick={() => { setSelectedQuest(null); setTransportMode('walk'); }} className="btn btn-outline" style={{ flex: 1 }}>BATAL</button>
-                                {isGuest ? (
-                                    <button onClick={() => { toast.error('Anda harus Login/Daftar akun sungguhan untuk bisa mengambil tugas dan mendapatkan uang!'); navigate('/login'); }} className="btn btn-green" style={{ flex: 1 }}>LOGIN UNTUK AMBIL</button>
-                                ) : (
-                                    <button onClick={() => handleTakeQuest(selectedQuest._id)} className="btn btn-primary" style={{ flex: 1 }}>AMBIL TUGAS</button>
-                                )}
-                            </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-            </div>
             {/* ── Bottom Navigation ─────────────────────── */}
             <BottomNav activePage="beranda" />
         </>
