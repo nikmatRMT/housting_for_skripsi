@@ -37,3 +37,13 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Skripsi Documentation & Helper Scripts (kept locally but ignored on Git)
+/diagran, erd, flowchat,dll/
+/docs/
+/docs_md/
+/graphify-out/
+/graphify/
+/scripts/
+/scratch_fix_saldo.js
+
